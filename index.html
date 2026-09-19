@@ -83,6 +83,10 @@ textarea{min-height:110px;resize:vertical}
 #photoPreview{display:none;width:100%;max-height:230px;object-fit:cover;border-radius:15px;margin-top:10px}
 @media(max-width:600px){#jar{width:57vw;height:53vh;top:57%;min-width:205px}.moon{width:48px;height:48px}.moon:after{width:44px;height:44px}.card{padding:28px 19px}.card p{font-size:16px}#hint{bottom:62px;font-size:12px}#giftBtn,#archiveBtn,#randomBtn,#wishBtn,#musicBtn,#aboutBtn{font-size:11px;padding:8px 9px}#giftBtn{left:7px}#archiveBtn{right:7px}#randomBtn{left:7px;bottom:58px}#wishBtn{left:110px;bottom:58px}#musicBtn{right:7px;bottom:58px}#aboutBtn{right:108px;bottom:58px}}
 #sharedStatus{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;padding:7px 12px;border-radius:18px;background:#241c0b;color:#ffe9a0;font:11px Arial,sans-serif;display:none} 
+
+
+#adoptSave{touch-action:manipulation;cursor:pointer;min-height:48px;position:relative;z-index:20}
+#adoptSave:disabled{opacity:.65;cursor:wait}
 </style>
 
 <style>
@@ -417,7 +421,7 @@ textarea{min-height:110px;resize:vertical}
 <label>Il ricordo, la frase o il pensiero</label><textarea id="memoryText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Teresa..."></textarea>
 <label>Una fotografia (facoltativa)</label><input id="memoryPhoto" type="file" accept="image/*">
 <img id="photoPreview" alt="Anteprima della fotografia">
-<div class="actionRow"><button id="adoptSave">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
+<div class="actionRow"><button id="adoptSave" type="button" onclick="window.adoptFireflyMemory()">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
 </div></div>
 
 <div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button><button id="deleteMemory" class="secondary">🗑️ Cancella questo ricordo</button></div></div></div>
@@ -646,27 +650,74 @@ function openAdoption(f){
  $("memoryAuthor").value="";$("memoryText").value="";$("memoryPhoto").value="";$("photoPreview").style.display="none";
  $("adopt").dataset.pendingId=fireflyId; $("adopt").classList.remove("hidden");
 }
-async function createAdoptedMemory(){
- const author=$("memoryAuthor").value.trim()||"Una persona che ti vuole bene";
- const text=$("memoryText").value.trim();
- const file=$("memoryPhoto").files[0];
- if(!text&&!file){toast("Puoi lasciare anche solo una frase o una fotografia 💛");return}
- if(!requireShared())return;
- const color=colors[memories.length%colors.length];
- const quote=text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”";
- $("adoptSave").disabled=true;
+window.adoptFireflyMemory=async function(){
+ const button=document.getElementById("adoptSave");
+ if(button && button.dataset.busy==="1") return;
+
+ const author=(document.getElementById("memoryAuthor")?.value||"").trim()||"Una persona che ti vuole bene";
+ const text=(document.getElementById("memoryText")?.value||"").trim();
+ const photoInput=document.getElementById("memoryPhoto");
+ const file=photoInput?.files?.[0]||null;
+
+ if(!text && !file){
+   toast("Scrivi un ricordo oppure scegli una fotografia 💛");
+   return;
+ }
+ if(!supabaseClient){
+   toast("Il barattolo condiviso non è collegato.");
+   return;
+ }
+
+ if(button){
+   button.dataset.busy="1";
+   button.disabled=true;
+   button.textContent="✨ Salvataggio…";
+ }
+
  try{
-  const {error}=await insertSharedMemory({author,text,quote,color,imageFile:file});
-  if(error)throw error;
-  $("adopt").classList.add("hidden");
-  $("memoryAuthor").value="";$("memoryText").value="";$("memoryPhoto").value="";
-  $("photoPreview").style.display="none";
-  await loadSharedMemories();
-  makeFirefly(null);
-  toast("✨ La lucciola è stata adottata per tutti.");
- }catch(e){console.error(e);toast("Non sono riuscito a salvare la lucciola.");}
- finally{$("adoptSave").disabled=false;}
+   const color=colors[memories.length%colors.length];
+   const quote=text
+     ?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”")
+     :"“Alcuni ricordi non hanno bisogno di parole.”";
+
+   const result=await insertSharedMemory({
+     author:author,
+     text:text,
+     quote:quote,
+     color:color,
+     imageFile:file
+   });
+
+   if(result && result.error) throw result.error;
+
+   document.getElementById("adopt")?.classList.add("hidden");
+   const authorEl=document.getElementById("memoryAuthor");
+   const textEl=document.getElementById("memoryText");
+   if(authorEl) authorEl.value="";
+   if(textEl) textEl.value="";
+   if(photoInput) photoInput.value="";
+   const preview=document.getElementById("photoPreview");
+   if(preview) preview.style.display="none";
+
+   await loadSharedMemories();
+   makeFirefly(null);
+   toast("✨ Lucciola adottata!");
+ }catch(error){
+   console.error("Adotta lucciola:",error);
+   toast("Non riesco a salvare la lucciola. Controlla la connessione e riprova.");
+ }finally{
+   if(button){
+     button.dataset.busy="0";
+     button.disabled=false;
+     button.textContent="Adotta la lucciola ✨";
+   }
+ }
+};
+
+async function createAdoptedMemory(){
+ return window.adoptFireflyMemory();
 }
+
 function finishAdoption(idx,c){
  const flash=document.createElement("div");flash.className="jarFlash";flash.style.setProperty("--c",c);jar.appendChild(flash);setTimeout(()=>flash.remove(),900);
 }
@@ -918,8 +969,6 @@ async function beginWorld(){
  }else restoreSavedJar();
 }
 $("begin").onclick=beginWorld;
-
-$("adoptSave").onclick=createAdoptedMemory;
 $("adoptSkip").onclick=async()=>{
  if(!requireShared())return;
  const c=colors[memories.length%colors.length];
