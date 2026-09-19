@@ -99,7 +99,7 @@ textarea{min-height:110px;resize:vertical}
 <div class="actionRow"><button id="adoptSave">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
 </div></div>
 
-<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button></div></div></div>
+<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button><button id="deleteMemory" class="secondary">🗑️ Cancella questo ricordo</button></div></div></div>
 
 <div id="archive" class="overlay hidden"><div class="card">
 <div class="eyebrow">Il barattolo</div><h2>Tutti i ricordi raccolti</h2><p>Puoi riaprire qualsiasi luce e tornare a quel ricordo.</p>
@@ -126,17 +126,42 @@ textarea{min-height:110px;resize:vertical}
 
 <script>
 const colors=["#ffd66e","#8ed8ff","#d9a8ff","#8dffa9","#ffadcf","#ffb36e"];
-const memories=[];
-let collected=0,active=null,offsetX=0,offsetY=0,fireflyId=0;
+const STORAGE_KEY="lucciole_nonna_teresa_v6";
+const defaultMemories=[
+ {title:"Le nostre passeggiate",text:"Qui inseriremo il ricordo vero della campagna e delle nostre passeggiate.",quote:"“Le lucciole sembravano stelle scese sulla terra.”",color:colors[0],image:"",author:"",seed:true},
+ {title:"Una giornata speciale",text:"Un posto per una giornata che vuoi conservare.",quote:"“Alcune giornate restano accese.”",color:colors[1],image:"",author:"",seed:true},
+ {title:"Una cosa che amo di te",text:"Un messaggio per nonna Teresa.",quote:"“Ci sono persone che fanno luce senza saperlo.”",color:colors[2],image:"",author:"",seed:true},
+ {title:"Una storia di famiglia",text:"Una storia che merita di essere ricordata.",quote:"“Le storie passano di voce in voce.”",color:colors[3],image:"",author:"",seed:true},
+ {title:"Una sorpresa",text:"Questa lucciola è pronta per una sorpresa.",quote:"“Psst... ce n'è ancora una.”",color:colors[4],image:"",author:"",seed:true},
+ {title:"Un ricordo da riempire",text:"Una fotografia e le parole di qualcuno che vuole bene a Teresa.",quote:"“Una piccola luce, un grande ricordo.”",color:colors[5],image:"",author:"",seed:true}
+];
+let memories=[],collected=0,active=null,offsetX=0,offsetY=0,fireflyId=0;
 const $=id=>document.getElementById(id),jar=$("jar"),world=$("world");
 
-function seedMemory(title,text,quote,color){memories.push({title,text,quote,color,image:"",author:""})}
-seedMemory("Le nostre passeggiate","Qui inseriremo il ricordo vero della campagna e delle nostre passeggiate.","“Le lucciole sembravano stelle scese sulla terra.”",colors[0]);
-seedMemory("Una giornata speciale","Un posto per una giornata che vuoi conservare.","“Alcune giornate restano accese.”",colors[1]);
-seedMemory("Una cosa che amo di te","Un messaggio per nonna Teresa.","“Ci sono persone che fanno luce senza saperlo.”",colors[2]);
-seedMemory("Una storia di famiglia","Una storia che merita di essere ricordata.","“Le storie passano di voce in voce.”",colors[3]);
-seedMemory("Una sorpresa","Questa lucciola è pronta per una sorpresa.","“Psst... ce n'è ancora una.”",colors[4]);
-seedMemory("Un ricordo da riempire","Una fotografia e le parole di qualcuno che vuole bene a Teresa.","“Una piccola luce, un grande ricordo.”",colors[5]);
+function loadSaved(){
+ try{
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(raw){
+   const data=JSON.parse(raw);
+   memories=Array.isArray(data.memories)?data.memories:[...defaultMemories];
+   collected=Number(data.collected)||0;
+  }else{
+   memories=[...defaultMemories];collected=0;
+  }
+ }catch(e){memories=[...defaultMemories];collected=0}
+}
+function saveState(){
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify({
+   memories,
+   collected,
+   savedAt:new Date().toISOString()
+  }));
+ }catch(e){
+  toast("Il browser non ha abbastanza spazio per salvare questo ricordo.");
+ }
+}
+loadSaved();
 
 function rand(a,b){return Math.random()*(b-a)+a}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2400)}
@@ -181,44 +206,83 @@ function createAdoptedMemory(){
  if(!text&&!file){toast("Puoi lasciare anche solo una frase o una fotografia 💛");return}
  const save=image=>{
   const idx=memories.length,c=colors[idx%colors.length];
-  memories.push({title:"Un ricordo per Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true});
+  memories.push({title:"Un ricordo per Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:true});
   finishAdoption(idx,c);
  };
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("");
 }
 function finishAdoption(idx,c){
+ saveState();
  const flash=document.createElement("div");flash.className="jarFlash";flash.style.setProperty("--c",c);jar.appendChild(flash);setTimeout(()=>flash.remove(),900);
  const d=document.createElement("div");d.className="injar";d.dataset.memory=idx;d.style.left=rand(12,88)+"%";d.style.top=rand(18,88)+"%";d.style.background=c;d.style.boxShadow=`0 0 13px 5px ${c}`;d.onclick=()=>showMemory(idx);jar.appendChild(d);
- collected++;$("count").textContent=collected;$("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.24,.05+collected*.012)}),transparent 68%)`;
+ collected++;$("count").textContent=collected;$("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.24,.05+collected*.012)}),transparent 68%)`;saveState();
  $("adopt").classList.add("hidden");toast("✨ La lucciola è stata adottata.");
  // Regenerate a fresh neutral firefly so there are always many to collect.
  setTimeout(()=>makeFirefly(null),420);
  if(collected===80)setTimeout(()=>$("final").classList.remove("hidden"),1100);
 }
 function showMemory(i){
- const m=memories[i];if(!m)return;
+ const m=memories[i];if(!m)return;currentMemoryIndex=i;
  const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
  $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
  $("memory").classList.remove("hidden")
 }
+function deleteCurrentMemory(){
+ const i=currentMemoryIndex;
+ if(i===null||!memories[i])return;
+ const m=memories[i];
+ if(!confirm("Vuoi davvero cancellare questo ricordo e la sua lucciola?"))return;
+
+ // Remove the colored adopted light linked to this memory.
+ jar.querySelectorAll(".injar").forEach(dot=>{
+   if(Number(dot.dataset.memory)===i) dot.remove();
+ });
+
+ // Keep array indexes stable by replacing the record with null rather than
+ // shifting everything (important because existing lights store their index).
+ memories[i]=null;
+ collected=Math.max(0,collected-1);
+ $("count").textContent=collected;
+ saveState();
+ $("memory").classList.add("hidden");
+ currentMemoryIndex=null;
+ toast("🗑️ Ricordo cancellato.");
+}
+
 function renderArchive(){
  const g=$("grid");g.innerHTML="";
  const adopted=[...jar.querySelectorAll(".injar")].map(d=>Number(d.dataset.memory));
  if(!adopted.length){g.innerHTML="<p>Nessuna lucciola è ancora stata adottata. ✨</p>";return}
  const seen=new Set();
- adopted.forEach(i=>{if(seen.has(i))return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title)}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
+ adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title)}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
 }
-$("begin").onclick=()=>{$("start").classList.add("hidden");for(let i=0;i<12;i++)makeFirefly(null)}
+function restoreSavedJar(){
+ $("count").textContent=collected;
+ const saved=memories.map((m,i)=>({m,i})).filter(x=>x.m&&(x.m.user||x.m.adopted));
+ saved.slice(0,collected).forEach(x=>{
+  const d=document.createElement("div");d.className="injar";d.dataset.memory=x.i;
+  d.style.left=rand(12,88)+"%";d.style.top=rand(18,88)+"%";
+  d.style.background=x.m.color;d.style.boxShadow=`0 0 13px 5px ${x.m.color}`;
+  d.onclick=()=>showMemory(x.i);jar.appendChild(d);
+ });
+ $("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.24,.05+collected*.012)}),transparent 68%)`;
+}
+function beginWorld(){
+ $("start").classList.add("hidden");
+ restoreSavedJar();
+ for(let i=0;i<12;i++)makeFirefly(null);
+}
+$("begin").onclick=beginWorld;
+
 $("adoptSave").onclick=createAdoptedMemory;
 $("adoptSkip").onclick=()=>{
- const c=colors[collected%colors.length];finishAdoption(memories.length,c);
- memories.push({title:"Una luce per Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:""});
- // Correct the memory index created above: finishAdoption must point to the new memory.
- // Rebind the just-created dot to the new record.
- const dots=jar.querySelectorAll(".injar");dots[dots.length-1].dataset.memory=memories.length-1;dots[dots.length-1].onclick=()=>showMemory(memories.length-1);
+ const c=colors[memories.length%colors.length],idx=memories.length;
+ memories.push({title:"Una luce per Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:"",user:true,adopted:true});
+ finishAdoption(idx,c);
 };
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
-$("closeMemory").onclick=()=>$("memory").classList.add("hidden");
+$("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
+$("deleteMemory").onclick=deleteCurrentMemory;
 $("archiveBtn").onclick=()=>{renderArchive();$("archive").classList.remove("hidden")};
 $("closeArchive").onclick=()=>$("archive").classList.add("hidden");
 $("giftBtn").onclick=()=>$("gift").classList.remove("hidden");
@@ -227,7 +291,7 @@ $("continue").onclick=()=>$("final").classList.add("hidden");
 $("saveGift").onclick=()=>{
  const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
  if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
- const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true});$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
+ const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
 };
 </script>
