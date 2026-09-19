@@ -468,7 +468,7 @@ textarea{min-height:110px;resize:vertical}
   <div id="wishStars"></div>
   <div class="wishComposer">
     <textarea id="wishRoomText" maxlength="700" placeholder="Scrivi un desiderio o un augurio per Nonna Teresa..."></textarea>
-    <button id="addWishStar">Affidalo a una stella 🌠</button><button id="clearWishes" class="secondary">🗑️ Cancella desideri</button>
+    <button id="addWishStar">Affidalo a una stella 🌠</button>
     <button id="closeWishRoom" class="secondary">Torna al cielo</button>
   </div>
 </div>
@@ -737,41 +737,33 @@ async function saveWishes(){
 }
 
 function createWishStar(wish){
- const stars=$("wishStars");
- if(!stars||!wish)return;
- const star=document.createElement("div");
- star.className="wishStar";
- star.dataset.wishId=wish.id||"";
- star.style.left=rand(6,94)+"%";
- star.style.top="-30px";
+  const stars=$("wishStars");
+  if(!stars)return;
+  const star=document.createElement("div");
+  star.className="wishStar";
+  star.dataset.wishId=wish.id||"";
+  star.style.left=rand(6,94)+"%";
+  star.style.top="-30px";
 
- const duration=rand(4200,7200);
- const endX=rand(-12,12),endY=rand(80,112);
+  const duration=rand(4200,7200);
+  const endX=rand(-12,12);
+  const endY=rand(80,112);
 
- star.animate([
-   {transform:"translate(0,0) rotate(-25deg)",opacity:0},
-   {transform:`translate(${endX/2}vw,${endY/2}vh) rotate(-25deg)`,opacity:1,offset:.25},
-   {transform:`translate(${endX}vw,${endY}vh) rotate(-25deg)`,opacity:.12}
- ],{duration,easing:"linear",fill:"forwards"});
+  star.animate(
+    [
+      {transform:"translate(0,0) rotate(-25deg)",opacity:0},
+      {transform:`translate(${endX/2}vw,${endY/2}vh) rotate(-25deg)`,opacity:1,offset:.25},
+      {transform:`translate(${endX}vw,${endY}vh) rotate(-25deg)`,opacity:.12}
+    ],
+    {duration,easing:"linear",fill:"forwards"}
+  );
 
- let caught=false;
- const take=(e)=>{
-   if(e){e.preventDefault();e.stopPropagation();}
-   if(caught)return;
-   caught=true;
-   showWishReveal(wish.text||wish,star);
- };
- star.addEventListener("pointerdown",take);
- star.addEventListener("click",take);
- stars.appendChild(star);
+  const take=()=>showWishReveal(wish.text||wish,star);
+  star.addEventListener("pointerdown",e=>{e.preventDefault();take()});
+  star.addEventListener("click",take);
 
- setTimeout(()=>{
-   if(star.isConnected)star.remove();
-   // Recreate this same wish later, but only once and only if it still exists.
-   if(!$("wishRoom")?.classList.contains("hidden") && wishes.some(w=>w.id===wish.id)){
-     setTimeout(()=>createWishStar(wish),900);
-   }
- },duration+100);
+  stars.appendChild(star);
+  setTimeout(()=>{if(star.isConnected)star.remove()},duration+100);
 }
 
 function showWishReveal(wish,star){
@@ -821,10 +813,19 @@ async function openWishRoom(){
  const stars=$("wishStars");
  if(stars){
    stars.innerHTML="";
-   // Esattamente una stella iniziale per ogni desiderio.
    wishes.forEach(w=>createWishStar(w));
  }
+
+ if(!wishShower){
+   wishShower=setInterval(()=>{
+     if(!room.classList.contains("hidden") && wishes.length){
+       const w=wishes[Math.floor(Math.random()*wishes.length)];
+       createWishStar(w);
+     }
+   },1300);
+ }
 }
+
 function closeWishRoom(){
  const room=$("wishRoom");
  if(room)room.classList.add("hidden");
@@ -850,38 +851,6 @@ async function addWish(){
  await saveWishes();
  await openWishRoom();
 }
-async function clearAllWishes(){
- const button=$("clearWishes");
- if(!wishes.length){
-   toast("Non ci sono desideri da cancellare.");
-   return;
- }
- if(!confirm("Vuoi cancellare TUTTI i desideri dal cielo? Questa azione vale per tutti i visitatori."))return;
-
- if(button)button.disabled=true;
- try{
-   if(supabaseClient){
-     // Delete every wish through the shared database.
-     const {error}=await supabaseClient.from("wishes").delete().not("id","is",null);
-     if(error)throw error;
-     wishes=[];
-   }else{
-     wishes=[];
-     await saveWishes();
-   }
-   const stars=$("wishStars");
-   if(stars)stars.innerHTML="";
-   const count=$("wishCount");
-   if(count)count.textContent="0";
-   toast("🗑️ Tutti i desideri sono stati cancellati.");
- }catch(e){
-   console.error(e);
-   toast("Non sono riuscito a cancellare i desideri.");
- }finally{
-   if(button)button.disabled=false;
- }
-}
-
 function showFinal(){
  const layer=$("finalStars");layer.innerHTML="";
  for(let i=0;i<80;i++){
@@ -999,8 +968,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(wb)wb.addEventListener("click",openWishRoom);
   if(add)add.addEventListener("click",addWish);
   if(close)close.addEventListener("click",closeWishRoom);
-  const clear=$("clearWishes");
-  if(clear)clear.addEventListener("click",clearAllWishes);
   loadWishes();
   if(input)input.addEventListener("keydown",e=>{
     if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
@@ -1011,12 +978,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   loadWishes();
 });
 // Direct fallback for static GitHub Pages loading.
-const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle"), _clearWishes=$("clearWishes");
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle");
 if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
 if(_soundToggle)_soundToggle.onclick=toggleAmbient;
-if(_clearWishes)_clearWishes.onclick=clearAllWishes;
 </script>
 </body>
 </html>
