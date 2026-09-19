@@ -43,6 +43,10 @@ button.secondary{background:#14243e;color:#edf3ff;border:1px solid #ffffff1c}
 .hidden{display:none!important}
 #archiveBtn,#giftBtn{position:fixed;z-index:40;bottom:17px;padding:10px 15px;background:#081426cc;color:#f2f4fa;border:1px solid #ffffff1c;backdrop-filter:blur(8px)}
 #archiveBtn{right:16px}#giftBtn{left:16px}
+@media(max-width:600px){
+ #archiveBtn,#giftBtn{bottom:14px;font-size:14px;padding:9px 12px}
+ #giftBtn{left:10px} #archiveBtn{right:10px}
+}
 #memoryContent img{display:block;width:100%;max-height:340px;object-fit:cover;border-radius:18px;margin:0 auto 18px;box-shadow:0 12px 35px #0007}
 .photoPlaceholder{height:210px;border-radius:18px;background:radial-gradient(circle,#fff2a522,transparent 55%),#0a172b;border:1px solid #ffffff14;display:flex;align-items:center;justify-content:center;font-size:55px;margin-bottom:18px}
 .quote{font-size:20px!important;font-style:italic;color:#fff0a8!important}
@@ -119,10 +123,27 @@ function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setT
 function rand(a,b){return Math.random()*(b-a)+a}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 
+function pointOutsideJar(){
+ const jr=jar.getBoundingClientRect();
+ const margin=55;
+ for(let tries=0;tries<80;tries++){
+   const x=rand(3,97), y=rand(10,88);
+   const px=innerWidth*x/100, py=innerHeight*y/100;
+   // Keep the free-flying lucciole clearly OUTSIDE the jar.
+   if(px < jr.left-margin || px > jr.right+margin || py < jr.top-margin || py > jr.bottom+margin){
+     return {x,y};
+   }
+ }
+ // Guaranteed fallback: alternate between the two sides of the jar.
+ return Math.random()<.5
+   ? {x:rand(3,17),y:rand(16,88)}
+   : {x:rand(83,97),y:rand(16,88)};
+}
 function makeFirefly(memoryIndex){
  const f=document.createElement("div");f.className="firefly";f.dataset.memory=memoryIndex;f.dataset.id=fireflyId++;
- f.style.left=rand(4,94)+"vw";f.style.top=rand(14,84)+"vh";
- f.dataset.baseX=parseFloat(f.style.left);f.dataset.baseY=parseFloat(f.style.top);
+ const p=pointOutsideJar();
+ f.style.left=p.x+"vw";f.style.top=p.y+"vh";
+ f.dataset.baseX=p.x;f.dataset.baseY=p.y;
  f.addEventListener("pointerdown",startDrag);world.appendChild(f);
  wander(f,rand(0,20),rand(.55,1.15));
 }
@@ -154,7 +175,11 @@ function endDrag(e){
  document.removeEventListener("pointermove",drag);
  const r=jar.getBoundingClientRect(),f=active.getBoundingClientRect(),cx=f.left+f.width/2,cy=f.top+f.height/2;
  if(cx>r.left&&cx<r.right&&cy>r.top&&cy<r.bottom)collect(active);
- else{active.dataset.dragging="0";active.classList.remove("dragging");active.style.transform="";active.style.left=rand(4,94)+"vw";active.style.top=rand(14,84)+"vh";active.dataset.baseX=parseFloat(active.style.left);active.dataset.baseY=parseFloat(active.style.top)}
+ else{
+ active.dataset.dragging="0";active.classList.remove("dragging");active.style.transform="";
+ const p=pointOutsideJar();active.style.left=p.x+"vw";active.style.top=p.y+"vh";
+ active.dataset.baseX=p.x;active.dataset.baseY=p.y;
+}
  active=null;
 }
 function collect(f){
