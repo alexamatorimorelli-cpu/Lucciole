@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<script>
+window.startSiteNow = function(){
+  var start = document.getElementById("start");
+  if(start) start.classList.add("hidden");
+  document.body.classList.add("site-started");
+  try{
+    if(typeof beginWorld === "function") beginWorld();
+    else if(typeof startAmbient === "function") startAmbient();
+  }catch(e){
+    // The visual start must still work even if an optional feature fails.
+  }
+};
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Le lucciole di Nonna Teresa ✨</title>
@@ -351,12 +365,24 @@ textarea{min-height:110px;resize:vertical}
 </style>
 
 <style>
-.wishStar{position:absolute;width:14px;height:14px;border-radius:50%;background:#fffbe0;box-shadow:0 0 10px 4px #fff7bd,0 0 30px 11px #fff2a044;cursor:pointer;touch-action:none;z-index:4}
-.wishStar:before{content:"";position:absolute;width:155px;height:4px;right:5px;top:5px;transform:rotate(-24deg);transform-origin:right center;background:linear-gradient(90deg,transparent,#fff8d688 55%,#fffbe0);filter:blur(.5px);border-radius:999px}
-.wishStar:after{content:"";position:absolute;width:80px;height:18px;right:35px;top:-2px;transform:rotate(-24deg);background:linear-gradient(90deg,transparent,#fff8cf22,transparent);filter:blur(4px)}
+.wishStar{
+ position:absolute;width:14px;height:14px;border-radius:50%;
+ background:#fffbe0;box-shadow:0 0 10px 4px #fff7bd,0 0 30px 11px #fff2a044;
+ cursor:pointer;touch-action:none;z-index:4;
+}
+.wishStar:before{
+ content:"";position:absolute;width:155px;height:4px;right:5px;top:5px;
+ transform:rotate(-24deg);transform-origin:right center;
+ background:linear-gradient(90deg,transparent,#fff8d688 55%,#fffbe0);
+ filter:blur(.5px);border-radius:999px;
+}
+.wishStar:after{
+ content:"";position:absolute;width:80px;height:18px;right:35px;top:-2px;
+ transform:rotate(-24deg);background:linear-gradient(90deg,transparent,#fff8cf22,transparent);
+ filter:blur(4px);
+}
 .wishStar.caught{animation:starCaught .65s ease-out forwards!important}
 @keyframes starCaught{0%{transform:scale(1);opacity:1}35%{transform:scale(2.5);opacity:1}100%{transform:scale(.1);opacity:0}}
-@media(max-width:600px){#wishRoom .wishComposer{max-height:44vh;overflow:auto}}
 </style>
 </head>
 <body><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
@@ -378,7 +404,7 @@ textarea{min-height:110px;resize:vertical}
 <p>Ci sono ricordi che non fanno rumore.<br>Restano lì, piccoli piccoli, come lucciole nella notte.</p>
 <p><strong>Se li metti tutti insieme, però,<br>possono illuminare una vita intera.</strong></p>
 <p><strong>Prima di cominciare...</strong><br>Mi raccomando: <strong>cantate con voi la canzone</strong>,<br>o la lucciola non verrà da voi. 🌙</p>
-<button id="begin">Cominciamo ✨</button>
+<button id="begin" type="button" onclick="window.startSiteNow()">Cominciamo ✨</button>
 </div></div>
 
 <!-- After a capture: this is where the new memory is attached -->
@@ -607,7 +633,7 @@ function startAmbient(){
     if(!AC)return;
     ambientCtx=new AC();
     ambientGain=ambientCtx.createGain();
-    ambientGain.gain.value=.055;
+    ambientGain.gain.value=.025;
     ambientGain.connect(ambientCtx.destination);
     const notes=[196,220,261.63,293.66,329.63,392];
     let step=0;
@@ -646,72 +672,252 @@ function saveWishes(){
   if(count)count.textContent=wishes.length;
 }
 
+function createWishStar(wish){
+  const stars=$("wishStars");
+  if(!stars)return;
+  const star=document.createElement("div");
+  star.className="wishStar";
+  star.dataset.wish=wish;
+  star.style.left=rand(6,94)+"%";
+  star.style.top="-30px";
 
-function createWishStar(wish,wishIndex=null){
- const stars=$("wishStars");if(!stars)return;
- const star=document.createElement("div");star.className="wishStar";star.dataset.wish=wish;
- if(wishIndex!==null)star.dataset.wishIndex=String(wishIndex);
- star.style.left=rand(6,94)+"%";star.style.top="-35px";
- const duration=rand(4200,7200),drift=rand(-12,12),fall=rand(92,118);
- star.animate([{transform:"translate(0,-5vh) rotate(-24deg) scale(.55)",opacity:0},
- {transform:`translate(${drift/2}vw,${fall/2}vh) rotate(-24deg) scale(1)`,opacity:1,offset:.2},
- {transform:`translate(${drift}vw,${fall}vh) rotate(-24deg) scale(.75)`,opacity:.1}],
- {duration,easing:"linear",fill:"forwards"});
- const take=e=>{e.preventDefault();if(star.dataset.taken==="1")return;star.dataset.taken="1";showWishReveal(wish,star,wishIndex)};
- star.addEventListener("pointerdown",take);star.addEventListener("click",take);
- stars.appendChild(star);setTimeout(()=>{if(star.isConnected)star.remove()},duration+150);
+  const duration=rand(4200,7200);
+  const endX=rand(-12,12);
+  const endY=rand(80,112);
+
+  star.animate(
+    [
+      {transform:"translate(0,0) rotate(-25deg)",opacity:0},
+      {transform:`translate(${endX/2}vw,${endY/2}vh) rotate(-25deg)`,opacity:1,offset:.25},
+      {transform:`translate(${endX}vw,${endY}vh) rotate(-25deg)`,opacity:.12}
+    ],
+    {duration,easing:"linear",fill:"forwards"}
+  );
+
+  const take=()=>showWishReveal(wish,star);
+  star.addEventListener("pointerdown",e=>{e.preventDefault();take()});
+  star.addEventListener("click",take);
+
+  stars.appendChild(star);
+  setTimeout(()=>{if(star.isConnected)star.remove()},duration+100);
 }
-function showWishReveal(wish,star,wishIndex=null){
- if(star&&star.isConnected){
-  const r=star.getBoundingClientRect();star.classList.add("caught");
-  const f=document.createElement("div");f.className="wishFlash";f.style.left=(r.left+r.width/2)+"px";f.style.top=(r.top+r.height/2)+"px";document.body.appendChild(f);setTimeout(()=>f.remove(),700);setTimeout(()=>{if(star.isConnected)star.remove()},650);
- }
- const room=$("wishRoom");if(!room)return;
- const old=room.querySelector(".wishReveal");if(old)old.remove();
- const layer=document.createElement("div");layer.className="wishReveal";
- layer.innerHTML=`<div class="card"><div class="wishStarIcon">🌠</div><div class="eyebrow">Un augurio per Nonna Teresa</div><h2>Hai preso una stella.</h2><blockquote>“${escapeHtml(wish)}”</blockquote><div class="actionRow"><button class="secondary" id="closeWishReveal">Lascia brillare il desiderio ✨</button><button class="secondary" id="deleteWishReveal">🗑️ Cancella questo desiderio</button></div></div>`;
- layer.querySelector("#closeWishReveal").onclick=()=>layer.remove();
- layer.querySelector("#deleteWishReveal").onclick=()=>{
-  const i=wishIndex!==null?wishIndex:wishes.indexOf(wish);
-  if(i>=0){wishes.splice(i,1);saveWishes()}layer.remove();renderWishStars();toast("🗑️ Desiderio cancellato.")
- };
- room.appendChild(layer);
+
+function showWishReveal(wish,star){
+  if(star && star.isConnected){
+    const r=star.getBoundingClientRect();
+    const flash=document.createElement("div");
+    flash.className="wishFlash";
+    flash.style.left=(r.left+r.width/2)+"px";
+    flash.style.top=(r.top+r.height/2)+"px";
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),700);
+    star.remove();
+  }
+
+  const room=$("wishRoom");
+  if(!room)return;
+
+  const old=room.querySelector(".wishReveal");
+  if(old)old.remove();
+
+  const layer=document.createElement("div");
+  layer.className="wishReveal";
+  layer.innerHTML=`
+    <div class="card">
+      <div class="wishStarIcon">🌠</div>
+      <div class="eyebrow">Un augurio per Nonna Teresa</div>
+      <h2>Hai preso una stella.</h2>
+      <blockquote>“${escapeHtml(wish)}”</blockquote>
+      <button class="secondary">Lascia brillare il desiderio ✨</button>
+    </div>`;
+  layer.querySelector("button").onclick=()=>layer.remove();
+  room.appendChild(layer);
 }
-function renderWishStars(){const stars=$("wishStars");if(!stars)return;stars.innerHTML="";wishes.forEach((w,i)=>createWishStar(w,i))}
+
+let wishShower=null;
+
 function openWishRoom(){
- const room=$("wishRoom");if(!room){toast("La stanza dei desideri non è disponibile.");return}
- startAmbient();loadWishes();room.classList.remove("hidden");renderWishStars();
- const input=$("wishRoomText");if(input)setTimeout(()=>input.focus(),150);
- if(!window.wishShower)window.wishShower=setInterval(()=>{if(!room.classList.contains("hidden")&&wishes.length){const i=Math.floor(Math.random()*wishes.length);createWishStar(wishes[i],i)}},1500);
+  const room=$("wishRoom");
+  if(!room){
+    toast("La stanza dei desideri non è disponibile.");
+    return;
+  }
+
+  startAmbient();
+  loadWishes();
+  room.classList.remove("hidden");
+
+  const input=$("wishRoomText");
+  if(input)setTimeout(()=>input.focus(),150);
+
+  // If there are existing wishes, show one star for each when opening.
+  const stars=$("wishStars");
+  if(stars){
+    stars.innerHTML="";
+    if(wishes.length){
+      wishes.forEach(w=>createWishStar(w));
+    }
+  }
+
+  // New stars keep appearing, but only while the room is open.
+  if(!wishShower){
+    wishShower=setInterval(()=>{
+      if(!room.classList.contains("hidden") && wishes.length){
+        const w=wishes[Math.floor(Math.random()*wishes.length)];
+        createWishStar(w);
+      }
+    },1300);
+  }
 }
-function closeWishRoom(){$("wishRoom")?.classList.add("hidden")}
+
+function closeWishRoom(){
+  const room=$("wishRoom");
+  if(room)room.classList.add("hidden");
+}
+
 function addWish(){
- const input=$("wishRoomText");if(!input)return;const text=input.value.trim();
- if(!text){toast("Scrivi prima un desiderio per Nonna Teresa ✨");input.focus();return}
- wishes.push(text);saveWishes();input.value="";createWishStar(text,wishes.length-1);toast("🌠 Il desiderio è diventato una stella.")
-}
-function clearWishes(){
- if(!wishes.length){toast("Non ci sono ancora desideri da cancellare.");return}
- if(!confirm("Vuoi cancellare tutti i desideri raccolti?"))return;
- wishes=[];saveWishes();renderWishStars();toast("🗑️ Tutti i desideri sono stati cancellati.")
-}
-function toggleAmbient(){
- if(!ambientCtx){startAmbient();return}
- if(ambientCtx.state==="running"){ambientGain.gain.setTargetAtTime(.0001,ambientCtx.currentTime,.15);$("soundToggle").textContent="🔇 Suono rilassante: OFF"}
- else{ambientCtx.resume().then(()=>{ambientGain.gain.setTargetAtTime(.055,ambientCtx.currentTime,.15);$("soundToggle").textContent="🔊 Suono rilassante: ON"})}
+  const input=$("wishRoomText");
+  if(!input)return;
+  const text=input.value.trim();
+  if(!text){
+    toast("Scrivi prima un desiderio per Nonna Teresa ✨");
+    input.focus();
+    return;
+  }
+
+  wishes.push(text);
+  saveWishes();
+  input.value="";
+  createWishStar(text);
+  toast("🌠 Il desiderio è diventato una stella.");
 }
 
+function showFinal(){
+ const layer=$("finalStars");layer.innerHTML="";
+ for(let i=0;i<80;i++){
+  const s=document.createElement("div");s.className="finalStar";
+  s.style.left=rand(5,95)+"%";s.style.setProperty("--dx",rand(-180,180)+"px");s.style.setProperty("--dy",rand(-90,20)+"px");
+  s.style.animationDelay=rand(0,1.2)+"s";layer.appendChild(s);
+ }
+ $("final").classList.remove("hidden");
+}
 
-// Explicit wish-room wiring
-document.addEventListener("DOMContentLoaded",()=>{
- const wb=$("wishBtn"),add=$("addWishStar"),close=$("closeWishRoom"),clear=$("clearWishes"),sound=$("soundToggle");
- if(wb)wb.addEventListener("click",openWishRoom);
- if(add)add.addEventListener("click",addWish);
- if(close)close.addEventListener("click",closeWishRoom);
- if(clear)clear.addEventListener("click",clearWishes);
- if(sound)sound.addEventListener("click",toggleAmbient);
+function showMemory(i){
+ const m=memories[i];if(!m)return;currentMemoryIndex=i;
+ const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
+ $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+ $("memory").classList.remove("hidden")
+}
+function deleteCurrentMemory(){
+ const i=currentMemoryIndex;
+ if(i===null||!memories[i])return;
+ const m=memories[i];
+ if(!confirm("Vuoi davvero cancellare questo ricordo e la sua lucciola?"))return;
 
+ // Remove the colored adopted light linked to this memory.
+ jar.querySelectorAll(".injar").forEach(dot=>{
+   if(Number(dot.dataset.memory)===i) dot.remove();
+ });
+
+ // Keep array indexes stable by replacing the record with null rather than
+ // shifting everything (important because existing lights store their index).
+ memories[i]=null;
+ collected=Math.max(0,collected-1);
+ $("count").textContent=collected; $("fireflyCount").textContent=collected;
+ saveState();
+ $("memory").classList.add("hidden");
+ currentMemoryIndex=null;
+ toast("🗑️ Ricordo cancellato.");
+}
+
+function renderArchive(){
+ const g=$("grid");g.innerHTML="";
+ const adopted=getAdoptedIndexes();
+ if(!adopted.length){g.innerHTML="<p>Nessuna lucciola è ancora stata adottata.<br>Il libro aspetta la sua prima storia. ✨</p>";return}
+ const seen=new Set();
+ adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title)}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
+}
+function restoreSavedJar(){
+ $("count").textContent=collected; $("fireflyCount").textContent=collected;
+ const saved=memories.map((m,i)=>({m,i})).filter(x=>x.m&&(x.m.user||x.m.adopted));
+ saved.slice(0,collected).forEach(x=>{
+  const d=document.createElement("div");d.className="injar";d.dataset.memory=x.i;
+  d.style.left=rand(12,88)+"%";d.style.top=rand(18,88)+"%";
+  d.style.background=x.m.color;d.style.boxShadow=`0 0 13px 5px ${x.m.color}`;
+  d.onclick=()=>showMemory(x.i);jar.appendChild(d);
+ });
+ $("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.30,.05+collected*.012)}),transparent 68%)`;
+ if(collected>=10)jar.classList.add("luminous");
+}
+function beginWorld(){
+ startAmbient();
+ $("start").classList.add("hidden");
+ restoreSavedJar();
+ for(let i=0;i<12;i++)makeFirefly(null);
+}
+$("begin").onclick=beginWorld;
+
+$("adoptSave").onclick=createAdoptedMemory;
+$("adoptSkip").onclick=()=>{
+ const c=colors[memories.length%colors.length],idx=memories.length;
+ memories.push({title:"Una luce per Nonna Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:"",user:true,adopted:true});
+ finishAdoption(idx,c);
+};
+$("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
+$("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
+$("deleteMemory").onclick=deleteCurrentMemory;
+$("archiveBtn").onclick=()=>{renderArchive(); $("fireflyCount").textContent=collected;$("archive").classList.remove("hidden")};
+$("closeArchive").onclick=()=>$("archive").classList.add("hidden");
+$("giftBtn").onclick=()=>$("gift").classList.remove("hidden");
+$("closeGift").onclick=()=>$("gift").classList.add("hidden");
+$("continue").onclick=()=>{$("final").classList.add("hidden");$("finalStars").innerHTML="";};
+
+$("randomBtn").onclick=showRandomMemory;
+$("closeRandom").onclick=()=>$("randomMemory").classList.add("hidden");
+$("aboutBtn").onclick=()=>$("aboutTeresa").classList.remove("hidden");
+$("closeAbout").onclick=()=>$("aboutTeresa").classList.add("hidden");
+
+
+$("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
+document.querySelectorAll(".butterfly").forEach((b,i)=>{
+  b.style.cursor="pointer";
+  b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
 });
+
+
+$("saveGift").onclick=()=>{
+ const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
+ if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
+ const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
+ if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
+};
+// Final initialization: all constants/functions now exist before we read wishes.
+
+
+// Explicit wish-room wiring (after all functions are defined).
+document.addEventListener("DOMContentLoaded",()=>{
+  const wb=$("wishBtn");
+  const add=$("addWishStar");
+  const close=$("closeWishRoom");
+  const input=$("wishRoomText");
+
+  if(wb)wb.addEventListener("click",openWishRoom);
+  if(add)add.addEventListener("click",addWish);
+  if(close)close.addEventListener("click",closeWishRoom);
+  loadWishes();
+  if(input)input.addEventListener("keydown",e=>{
+    if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
+      e.preventDefault();
+      addWish();
+    }
+  });
+  loadWishes();
+});
+// Direct fallback for static GitHub Pages loading.
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom");
+if(_wishBtn)_wishBtn.onclick=openWishRoom;
+if(_addWish)_addWish.onclick=addWish;
+if(_closeWish)_closeWish.onclick=closeWishRoom;
 </script>
 </body>
 </html>
