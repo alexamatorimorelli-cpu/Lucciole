@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Le lucciole di Nonna Teresa ✨</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{font-family:Georgia,serif;background:radial-gradient(circle at 50% 55%,#172743 0,#081224 42%,#020611 100%);color:#fff;cursor:default}
+#sky{position:fixed;inset:0;overflow:hidden}
+.stars{position:absolute;inset:0;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:83px 91px;opacity:.3}
+.hill{position:absolute;bottom:-5%;left:-5%;width:110%;height:30%;background:#020b0a;border-radius:50% 50% 0 0/35% 35% 0 0;box-shadow:0 -15px 50px #020807}
+#jar{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:min(58vw,440px);height:min(70vh,560px);min-width:260px;border:5px solid rgba(210,235,255,.42);border-radius:25% 25% 18% 18%;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(180,220,255,.11),rgba(255,255,255,.03));box-shadow:inset 0 0 45px rgba(170,210,255,.13),0 0 45px rgba(110,170,255,.08);z-index:3}
+#jar:before{content:"";position:absolute;left:8%;right:8%;top:-25px;height:45px;border:5px solid rgba(210,235,255,.42);border-radius:14px;background:rgba(120,160,190,.08)}
+#jarGlow{position:absolute;inset:8%;border-radius:20%;background:radial-gradient(circle,rgba(255,235,120,.08),transparent 65%);pointer-events:none}
+#counter{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(0,0,0,.28);padding:9px 17px;border-radius:30px;backdrop-filter:blur(8px);font-size:15px;letter-spacing:.5px}
+.firefly{position:absolute;width:18px;height:18px;border-radius:50%;background:#fff4a0;box-shadow:0 0 8px 3px #ffe879,0 0 25px 8px rgba(255,231,110,.35);z-index:5;touch-action:none;cursor:grab;transition:box-shadow .25s}
+.firefly:hover{box-shadow:0 0 12px 5px #fff3a0,0 0 35px 12px rgba(255,231,110,.55)}
+.firefly.dragging{cursor:grabbing;transform:scale(1.35);z-index:50}
+.injar{position:absolute;width:11px;height:11px;border-radius:50%;background:#fff0a0;box-shadow:0 0 8px 3px #ffe66b;z-index:4}
+#start,#memory,#final{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(1,7,18,.88);backdrop-filter:blur(7px);padding:25px}
+.card{max-width:600px;text-align:center;padding:38px 30px;border:1px solid rgba(255,235,160,.25);border-radius:28px;background:rgba(12,25,48,.8);box-shadow:0 20px 70px rgba(0,0,0,.4)}
+h1{font-size:clamp(32px,6vw,62px);margin:0 0 12px;color:#fff5bd;font-weight:normal}
+h2{font-size:30px;color:#fff5bd;font-weight:normal}
+p{font-size:18px;line-height:1.65;color:#e9edf7}
+button{border:0;border-radius:30px;padding:13px 25px;background:#fff0a5;color:#182033;font-size:16px;cursor:pointer;margin-top:12px}
+button:hover{transform:translateY(-1px);box-shadow:0 5px 20px rgba(255,238,150,.2)}
+.hidden{display:none!important}
+#hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(0,0,0,.3);padding:8px 15px;border-radius:20px;font-size:13px;color:#dce4f5}
+#memoryContent img{max-width:100%;max-height:280px;border-radius:16px;margin:10px 0;box-shadow:0 8px 30px #0008}
+#memoryContent .quote{font-size:21px;font-style:italic;color:#fff1ae}
+#openArchive{position:fixed;right:18px;bottom:18px;z-index:25;background:rgba(20,35,60,.8);color:#fff;border:1px solid #ffffff30}
+#archive{position:fixed;inset:0;z-index:80;background:rgba(2,8,19,.96);overflow:auto;padding:50px 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;max-width:1000px;margin:25px auto}
+.memoryItem{background:#10203a;border:1px solid #ffffff16;border-radius:18px;padding:18px;cursor:pointer}
+.memoryItem .dot{width:16px;height:16px;border-radius:50%;background:#ffe981;box-shadow:0 0 15px #ffe981;display:inline-block;margin-right:8px}
+</style>
+</head>
+<body>
+<div id="sky"><div class="stars"></div><div class="hill"></div></div>
+<div id="counter">Lucciole raccolte: <span id="count">0</span></div>
+<div id="jar"><div id="jarGlow"></div></div>
+<div id="hint">Prendi una lucciola e portala dentro il barattolo ✨</div>
+<button id="openArchive">✨ Ricordi raccolti</button>
+
+<div id="start">
+  <div class="card">
+    <div style="font-size:50px">✨</div>
+    <h1>Le lucciole di Nonna Teresa</h1>
+    <p>Ci sono ricordi che sembrano piccoli come una lucciola.<br>
+    Ma se li metti tutti insieme, possono illuminare una vita intera.</p>
+    <p><strong>Prima di cominciare...</strong><br>
+    Mi raccomando: <strong>cantate con voi la canzone</strong>,<br>
+    o la lucciola non verrà da voi. 🌙</p>
+    <button id="begin">Ho capito ✨</button>
+  </div>
+</div>
+
+<div id="memory" class="hidden">
+  <div class="card">
+    <div id="memoryContent"></div>
+    <button id="closeMemory">Lascia andare la lucciola</button>
+  </div>
+</div>
+
+<div id="archive" class="hidden">
+  <div style="max-width:1000px;margin:auto;text-align:center">
+    <h1>Il barattolo dei ricordi</h1>
+    <p>Ogni luce custodisce qualcosa che non vogliamo dimenticare.</p>
+    <div id="grid" class="grid"></div>
+    <button id="closeArchive">Torna al cielo 🌙</button>
+  </div>
+</div>
+
+<div id="final" class="hidden">
+  <div class="card">
+    <div style="font-size:65px">🫙✨</div>
+    <h1>Buon 80° compleanno, nonna Teresa.</h1>
+    <p>Una lucciola è piccola.<br>Un ricordo anche.</p>
+    <p><strong>Ma quando ne raccogli abbastanza,<br>riescono a illuminare una vita intera.</strong></p>
+    <p>Grazie per tutte le passeggiate,<br>tutte le storie, tutte le risate<br>e tutte le lucciole che abbiamo raccolto insieme. 💛</p>
+    <button id="continue">Continuare a guardare le lucciole ✨</button>
+  </div>
+</div>
+
+<script>
+const memories = [
+  {title:"Le nostre passeggiate", text:"Qui inseriremo il ricordo della campagna e delle nostre passeggiate.", quote:"“Le lucciole sembravano stelle scese sulla terra.”", color:"#fff0a0", image:""},
+  {title:"Un ricordo da aggiungere", text:"Questa è una lucciola pronta per una fotografia, una frase o una storia.", quote:"“Ogni ricordo trova il suo posto.”", color:"#aee7ff", image:""},
+  {title:"Un giorno speciale", text:"Qui potrai raccontare un momento preciso vissuto insieme.", quote:"“Alcune giornate restano accese per sempre.”", color:"#e0b6ff", image:""},
+  {title:"Una cosa che amo di te", text:"Scriviamo qui qualcosa che vuoi dire a nonna Teresa.", quote:"“Ci sono persone che fanno luce senza saperlo.”", color:"#ffb7d8", image:""},
+  {title:"Da parte di tutta la famiglia", text:"Potremo aggiungere qui un messaggio collettivo.", quote:"“Questa luce è tutta per te.”", color:"#b9ffb8", image:""},
+  {title:"Una lucciola misteriosa", text:"Questa la lasciamo libera: potrebbe contenere una sorpresa.", quote:"“Psst... ce n'è ancora una.”", color:"#ffd08a", image:""}
+];
+
+const sky=document.getElementById("sky"), jar=document.getElementById("jar");
+let collected=0, active=null, offsetX=0, offsetY=0, used=0;
+
+function rand(a,b){return Math.random()*(b-a)+a}
+function makeFirefly(i){
+  const f=document.createElement("div"); f.className="firefly";
+  f.style.left=rand(4,94)+"vw"; f.style.top=rand(12,84)+"vh";
+  f.dataset.i=i; f.dataset.x=f.style.left; f.dataset.y=f.style.top;
+  f.addEventListener("pointerdown",startDrag);
+  sky.appendChild(f);
+  animate(f);
+}
+function animate(f){
+  let t=rand(0,100), speed=rand(.5,1.2), baseX=parseFloat(f.style.left), baseY=parseFloat(f.style.top);
+  function step(){
+    if(f.classList.contains("dragging")||f.dataset.inside==="1"){requestAnimationFrame(step);return}
+    t+=.012*speed;
+    f.style.transform=`translate(${Math.sin(t)*18}px,${Math.cos(t*.77)*13}px)`;
+    requestAnimationFrame(step);
+  } requestAnimationFrame(step);
+}
+function startDrag(e){
+  active=e.currentTarget; active.classList.add("dragging");
+  const r=active.getBoundingClientRect(); offsetX=e.clientX-r.left; offsetY=e.clientY-r.top;
+  active.setPointerCapture(e.pointerId);
+  active.onpointermove=drag;
+  active.onpointerup=endDrag;
+}
+function drag(e){
+  if(!active)return;
+  active.style.left=(e.clientX-offsetX)+"px"; active.style.top=(e.clientY-offsetY)+"px"; active.style.transform="scale(1.35)";
+}
+function endDrag(e){
+  const r=jar.getBoundingClientRect(), f=active.getBoundingClientRect();
+  const inside=f.left+f.width/2>r.left && f.left+f.width/2<r.right && f.top+f.height/2>r.top && f.top+f.height/2<r.bottom;
+  if(inside) collect(active);
+  else {active.classList.remove("dragging"); active.style.transform=""; active.style.left=rand(4,94)+"vw"; active.style.top=rand(12,84)+"vh";}
+  active.onpointermove=null; active.onpointerup=null; active=null;
+}
+function collect(f){
+  f.remove(); collected++; document.getElementById("count").textContent=collected;
+  const dot=document.createElement("div"); dot.className="injar";
+  dot.style.left=rand(15,85)+"%"; dot.style.top=rand(20,88)+"%";
+  const m=memories[used%memories.length]; dot.style.background=m.color; dot.style.boxShadow=`0 0 10px 4px ${m.color}`;
+  dot.dataset.memory=used%memories.length; dot.onclick=()=>showMemory(Number(dot.dataset.memory));
+  jar.appendChild(dot); used++;
+  if(collected===memories.length) setTimeout(()=>document.getElementById("final").classList.remove("hidden"),800);
+}
+function showMemory(i){
+  const m=memories[i], c=document.getElementById("memoryContent");
+  c.innerHTML=`<div style="font-size:45px">✨</div><h2>${m.title}</h2>${m.image?`<img src="${m.image}" alt="">`:''}<p>${m.text}</p><div class="quote">${m.quote}</div>`;
+  document.getElementById("memory").classList.remove("hidden");
+}
+document.getElementById("begin").onclick=()=>{
+  document.getElementById("start").classList.add("hidden");
+  for(let i=0;i<memories.length;i++)makeFirefly(i);
+};
+document.getElementById("closeMemory").onclick=()=>document.getElementById("memory").classList.add("hidden");
+document.getElementById("openArchive").onclick=()=>{
+  const g=document.getElementById("grid"); g.innerHTML="";
+  memories.slice(0,used).forEach((m,i)=>{
+    const d=document.createElement("div"); d.className="memoryItem"; d.innerHTML=`<span class="dot" style="background:${m.color};box-shadow:0 0 15px ${m.color}"></span><strong>${m.title}</strong><p>${m.quote}</p>`;
+    d.onclick=()=>showMemory(i); g.appendChild(d);
+  });
+  if(!used)g.innerHTML="<p>Nessuna lucciola è stata ancora raccolta. ✨</p>";
+  document.getElementById("archive").classList.remove("hidden");
+};
+document.getElementById("closeArchive").onclick=()=>document.getElementById("archive").classList.add("hidden");
+document.getElementById("continue").onclick=()=>document.getElementById("final").classList.add("hidden");
+</script>
+</body>
+</html>
