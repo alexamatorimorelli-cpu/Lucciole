@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Le lucciole di Nonna Nonna Teresa ✨</title>
+<title>Le lucciole di Nonna Teresa ✨</title>
 <style>
 :root{--gold:#ffe98a}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
@@ -196,8 +196,67 @@ textarea{min-height:110px;resize:vertical}
   #secretMoon{right:8%;top:7%;width:48px;height:48px}
 }
 </style>
+
+<style>
+/* V12 mobile layout: reserve a clean area below the jar for controls */
+@media(max-width:600px){
+  #hint{
+    bottom:154px !important;
+    left:50% !important;
+    width:calc(100vw - 36px) !important;
+    max-width:390px !important;
+    line-height:1.35 !important;
+    text-align:center !important;
+    z-index:8 !important;
+  }
+
+  #jar{
+    height:49vh !important;
+    top:53% !important;
+  }
+
+  #giftBtn,#archiveBtn,#randomBtn,#wishBtn,#musicBtn,#aboutBtn{
+    z-index:50 !important;
+    font-size:11px !important;
+    padding:8px 10px !important;
+    white-space:nowrap !important;
+  }
+
+  /* two tidy rows */
+  #giftBtn{left:8px !important;bottom:12px !important}
+  #archiveBtn{right:8px !important;bottom:12px !important}
+  #randomBtn{left:8px !important;bottom:58px !important}
+  #wishBtn{left:50% !important;transform:translateX(-50%) !important;bottom:58px !important}
+  #musicBtn{right:8px !important;bottom:58px !important}
+  #aboutBtn{display:none !important}
+
+  /* Keep the landscape clean; the "Per Nonna Teresa" action is in the
+     opening/about flow on small screens rather than overlapping the jar. */
+  #fireflyCounter{
+    top:12px !important;
+    right:10px !important;
+  }
+}
+
+/* On desktop the original six controls fit comfortably. */
+@media(min-width:601px){
+  #hint{z-index:8}
+}
+</style>
+
+<style>
+#controlsShade{
+  position:fixed;
+  left:0;right:0;bottom:0;height:108px;z-index:35;
+  pointer-events:none;
+  background:linear-gradient(to top,rgba(0,5,10,.72),rgba(0,5,10,0));
+}
+@media(max-width:600px){
+  #controlsShade{height:132px}
+}
+</style>
 </head>
-<body><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
+<body><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
 <div id="counter">✨ <b id="count">0</b> lucciole nel barattolo</div>
 <div id="progress80">Ogni luce è un ricordo in più.</div>
@@ -208,12 +267,12 @@ textarea{min-height:110px;resize:vertical}
 <button id="randomBtn">🎁 Sorpresa</button>
 <button id="wishBtn">🌠 Esprimi un desiderio</button>
 <button id="musicBtn">♫ Musica</button>
-<button id="aboutBtn">💛 Per Nonna Nonna Teresa</button>
+<button id="aboutBtn">💛 Per Nonna Teresa</button>
 <div id="toast"></div>
 
 <div id="start" class="overlay"><div class="card">
-<div style="font-size:58px">✨</div><div class="eyebrow">Un piccolo regalo per Nonna Nonna Teresa</div>
-<h1>Le lucciole di Nonna Nonna Teresa</h1>
+<div style="font-size:58px">✨</div><div class="eyebrow">Un piccolo regalo per Nonna Teresa</div>
+<h1>Le lucciole di Nonna Teresa</h1>
 <p>Ci sono ricordi che non fanno rumore.<br>Restano lì, piccoli piccoli, come lucciole nella notte.</p>
 <p><strong>Se li metti tutti insieme, però,<br>possono illuminare una vita intera.</strong></p>
 <p><strong>Prima di cominciare...</strong><br>Mi raccomando: <strong>cantate con voi la canzone</strong>,<br>o la lucciola non verrà da voi. 🌙</p>
@@ -226,7 +285,7 @@ textarea{min-height:110px;resize:vertical}
 <h2>Adesso puoi affidarle un ricordo.</h2>
 <p>Questa è la cosa importante: <strong>prima la catturi, poi le dai un nome, una storia, una foto o un pensiero.</strong> Quando la salvi, la lucciola si accende del suo colore e rimane nel barattolo.</p>
 <label>Chi lascia questo ricordo?</label><input id="memoryAuthor" maxlength="60" placeholder="Il tuo nome">
-<label>Il ricordo, la frase o il pensiero</label><textarea id="memoryText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Nonna Teresa..."></textarea>
+<label>Il ricordo, la frase o il pensiero</label><textarea id="memoryText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Teresa..."></textarea>
 <label>Una fotografia (facoltativa)</label><input id="memoryPhoto" type="file" accept="image/*">
 <img id="photoPreview" alt="Anteprima della fotografia">
 <div class="actionRow"><button id="adoptSave">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
@@ -241,10 +300,10 @@ textarea{min-height:110px;resize:vertical}
 </div></div>
 
 <div id="gift" class="overlay hidden"><div class="card">
-<div style="font-size:42px">✨</div><div class="eyebrow">Per il compleanno di Nonna Nonna Teresa</div><h2>Regala una lucciola</h2>
+<div style="font-size:42px">✨</div><div class="eyebrow">Per il compleanno di Nonna Teresa</div><h2>Regala una lucciola</h2>
 <p>Puoi lasciare un ricordo direttamente qui. Nella versione condivisa verrà inviato all'archivio comune per essere approvato.</p>
 <label>Il tuo nome</label><input id="sender" maxlength="60" placeholder="Come vuoi firmarti?">
-<label>Il tuo ricordo</label><textarea id="giftText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Nonna Teresa..."></textarea>
+<label>Il tuo ricordo</label><textarea id="giftText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Teresa..."></textarea>
 <label>Una foto (facoltativa)</label><input id="photo" type="file" accept="image/*">
 <button id="saveGift">Accendi la lucciola ✨</button><button id="closeGift" class="secondary">Annulla</button>
 </div></div>
@@ -260,18 +319,18 @@ textarea{min-height:110px;resize:vertical}
 <div id="wish" class="overlay hidden"><div class="card">
   <div class="wishGlow"></div>
   <div class="eyebrow">Una lucciola speciale</div>
-  <h2>Esprimi un desiderio per Nonna Nonna Nonna Teresa</h2>
-  <p>Scrivi un desiderio, un augurio o qualcosa che vorresti accompagnasse Nonna Nonna Teresa nel suo nuovo anno.</p>
+  <h2>Esprimi un desiderio per Nonna Teresa</h2>
+  <p>Scrivi un desiderio, un augurio o qualcosa che vorresti accompagnasse Nonna Teresa nel suo nuovo anno.</p>
   <textarea id="wishText" maxlength="700" placeholder="Vorrei che..."></textarea>
   <div class="actionRow"><button id="sendWish">Lascia volare il desiderio 🌠</button><button id="closeWish" class="secondary">Non ora</button></div>
 </div></div>
 
 <div id="aboutTeresa" class="overlay hidden"><div class="card">
   <div class="bigHeart">💛</div>
-  <div class="eyebrow">Per Nonna Nonna Teresa</div>
+  <div class="eyebrow">Per Nonna Teresa</div>
   <h2>Una vita piena di luci</h2>
   <p>Questo barattolo raccoglie piccole cose: una fotografia, una frase, una risata, un momento che qualcuno ha deciso di non lasciare andare.</p>
-  <p><strong>Ogni lucciola è una persona che ha pensato a Nonna Nonna Teresa.</strong></p>
+  <p><strong>Ogni lucciola è una persona che ha pensato a Nonna Teresa.</strong></p>
   <p>Non importa quante saranno.<br>Ognuna avrà il suo posto qui.</p>
   <div class="actionRow"><button id="closeAbout" class="secondary">Torna al cielo 🌙</button></div>
 </div></div>
@@ -282,7 +341,7 @@ textarea{min-height:110px;resize:vertical}
 
 <div id="final" class="overlay hidden"><div class="finalStars" id="finalStars"></div><div class="card">
 <div style="font-size:62px">🫙✨</div><div class="eyebrow">Ottanta luci</div>
-<h1>Buon 80° compleanno, Nonna Nonna Teresa.</h1>
+<h1>Buon 80° compleanno, Nonna Teresa.</h1>
 <p>Una lucciola è piccola.<br>Un ricordo anche.</p>
 <p><strong>Ma quando ne raccogli abbastanza,<br>riescono a illuminare una vita intera.</strong></p>
 <p>Grazie per le passeggiate, le storie, le risate e tutte le lucciole raccolte insieme. 💛</p>
@@ -295,7 +354,7 @@ const STORAGE_KEY="lucciole_nonna_teresa_v11";
 const defaultMemories=[
  {title:"Le nostre passeggiate",text:"Qui inseriremo il ricordo vero della campagna e delle nostre passeggiate.",quote:"“Le lucciole sembravano stelle scese sulla terra.”",color:colors[0],image:"",author:"",seed:true},
  {title:"Una giornata speciale",text:"Un posto per una giornata che vuoi conservare.",quote:"“Alcune giornate restano accese.”",color:colors[1],image:"",author:"",seed:true},
- {title:"Una cosa che amo di te",text:"Un messaggio per Nonna Nonna Teresa.",quote:"“Ci sono persone che fanno luce senza saperlo.”",color:colors[2],image:"",author:"",seed:true},
+ {title:"Una cosa che amo di te",text:"Un messaggio per Nonna Teresa.",quote:"“Ci sono persone che fanno luce senza saperlo.”",color:colors[2],image:"",author:"",seed:true},
  {title:"Una storia di famiglia",text:"Una storia che merita di essere ricordata.",quote:"“Le storie passano di voce in voce.”",color:colors[3],image:"",author:"",seed:true},
  {title:"Una sorpresa",text:"Questa lucciola è pronta per una sorpresa.",quote:"“Psst... ce n'è ancora una.”",color:colors[4],image:"",author:"",seed:true},
  {title:"Un ricordo da riempire",text:"Una fotografia e le parole di qualcuno che vuole bene a Nonna Teresa.",quote:"“Una piccola luce, un grande ricordo.”",color:colors[5],image:"",author:"",seed:true}
@@ -382,7 +441,7 @@ function createAdoptedMemory(){
  if(!text&&!file){toast("Puoi lasciare anche solo una frase o una fotografia 💛");return}
  const save=image=>{
   const idx=memories.length,c=colors[idx%colors.length];
-  memories.push({title:"Un ricordo per Nonna Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:true});
+  memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:true});
   finishAdoption(idx,c);
  };
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("");
@@ -420,14 +479,14 @@ function showRandomMemory(){
 }
 function launchWish(){
   const text=$("wishText").value.trim();
-  if(!text){toast("Scrivi un piccolo desiderio per Nonna Nonna Teresa 💛");return}
+  if(!text){toast("Scrivi un piccolo desiderio per Nonna Teresa 💛");return}
   const s=document.createElement("div");s.className="firefly";
   const x=rand(25,75),y=rand(55,80);s.style.left=x+"vw";s.style.top=y+"vh";s.style.background="#fff2a0";s.style.boxShadow="0 0 16px 7px #fff2a0";
   s.style.zIndex=140;world.appendChild(s);
   const dx=rand(-18,18),dy=rand(-60,-35);
   s.animate([{transform:"scale(1)",opacity:1},{transform:`translate(${dx}vw,${dy}vh) scale(.25)`,opacity:0}],{duration:2600,easing:"ease-out"}).onfinish=()=>s.remove();
   $("wishText").value="";$("wish").classList.add("hidden");
-  toast("🌠 Il desiderio di Nonna Nonna Teresa è volato tra le stelle.");
+  toast("🌠 Il desiderio di Nonna Teresa è volato tra le stelle.");
 }
 function secretMessage(text){
   const old=document.querySelector(".secretMessage");if(old)old.remove();
@@ -501,7 +560,7 @@ $("begin").onclick=beginWorld;
 $("adoptSave").onclick=createAdoptedMemory;
 $("adoptSkip").onclick=()=>{
  const c=colors[memories.length%colors.length],idx=memories.length;
- memories.push({title:"Una luce per Nonna Nonna Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:"",user:true,adopted:true});
+ memories.push({title:"Una luce per Nonna Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:"",user:true,adopted:true});
  finishAdoption(idx,c);
 };
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
@@ -531,16 +590,16 @@ $("musicBtn").onclick=()=>{
   else{audio.pause();$("musicBtn").classList.remove("active");$("musicBtn").textContent="♫ Musica"}
 };
 
-$("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Nonna Teresa.");
+$("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
 document.querySelectorAll(".butterfly").forEach((b,i)=>{
   b.style.cursor="pointer";
-  b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Nonna Teresa.");
+  b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
 });
 
 $("saveGift").onclick=()=>{
  const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
  if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
- const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Nonna Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
+ const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
 };
 </script>
