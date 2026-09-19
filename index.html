@@ -161,7 +161,7 @@ textarea{min-height:110px;resize:vertical}
 @keyframes floatThing{from{transform:translate(0,0) rotate(-6deg)}to{transform:translate(34px,-18px) rotate(8deg)}}
 
 #secretMoon{position:absolute;z-index:7;right:8%;top:7%;width:67px;height:67px;border-radius:50%;cursor:pointer;background:transparent}
-#musicBtn.active{background:#ffe98a;color:#142035}
+
 #jar.luminous:after{box-shadow:inset -20px 0 30px rgba(255,255,255,.04)}
 
 .memoryReveal{animation:memoryReveal .55s ease both}
@@ -255,6 +255,86 @@ textarea{min-height:110px;resize:vertical}
   #controlsShade{height:132px}
 }
 </style>
+
+<style>
+/* DESIDERI — stanza delle stelle */
+#wishRoom{
+  position:fixed;inset:0;z-index:150;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(49,72,118,.32),transparent 34%),
+    radial-gradient(circle at 20% 20%,rgba(112,151,220,.10),transparent 28%),
+    linear-gradient(180deg,#020716,#07142c 52%,#020711);
+}
+#wishRoom:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle at 8% 14%,#ffffffaa 0 1px,transparent 2px),
+    radial-gradient(circle at 22% 34%,#ffffff88 0 1px,transparent 2px),
+    radial-gradient(circle at 38% 12%,#ffffff99 0 1px,transparent 2px),
+    radial-gradient(circle at 57% 27%,#ffffff77 0 1px,transparent 2px),
+    radial-gradient(circle at 72% 13%,#ffffffaa 0 1px,transparent 2px),
+    radial-gradient(circle at 88% 32%,#ffffff88 0 1px,transparent 2px),
+    radial-gradient(circle at 31% 72%,#ffffff77 0 1px,transparent 2px),
+    radial-gradient(circle at 82% 78%,#ffffff88 0 1px,transparent 2px);
+  opacity:.8;
+}
+#wishRoom .roomTitle{
+  position:absolute;top:7%;left:50%;transform:translateX(-50%);
+  width:min(680px,90vw);text-align:center;z-index:5;
+}
+#wishRoom .roomTitle h2{margin:5px 0 8px;font-size:clamp(26px,5vw,44px)}
+#wishRoom .roomTitle p{margin:0;color:#c7d2e4;font-size:15px}
+#wishRoom .wishCount{
+  display:inline-block;margin-top:12px;padding:7px 13px;border-radius:999px;
+  border:1px solid #ffffff20;background:#071225aa;color:#fff1a4;font-size:13px;
+}
+#wishStars{position:absolute;inset:0;z-index:3;overflow:hidden}
+.wishStar{
+  position:absolute;width:12px;height:12px;border-radius:50%;
+  background:#fff7bc;box-shadow:0 0 10px 4px #fff5a0,0 0 34px 10px #fff5a033;
+  cursor:pointer;touch-action:none;
+}
+.wishStar:after{
+  content:"";position:absolute;width:70px;height:2px;right:5px;top:5px;
+  transform:rotate(-25deg);transform-origin:right center;
+  background:linear-gradient(90deg,transparent,#fff8cf99);
+}
+#wishRoom .wishComposer{
+  position:absolute;left:50%;bottom:6%;transform:translateX(-50%);
+  width:min(650px,92vw);z-index:8;padding:13px;
+  display:flex;gap:8px;align-items:center;
+  border:1px solid #ffffff20;border-radius:20px;background:#061126dd;
+  backdrop-filter:blur(12px);box-shadow:0 18px 70px #0008;
+}
+#wishRoom .wishComposer textarea{
+  min-height:45px;max-height:90px;flex:1;margin:0;border-radius:13px;
+  font-size:14px;background:#071225;border:1px solid #ffffff18;
+}
+#wishRoom .wishComposer button{white-space:nowrap}
+.wishFlash{
+  position:absolute;width:100px;height:100px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff9bc 0 3%,#fff5a044 18%,transparent 68%);
+  transform:translate(-50%,-50%);z-index:6;animation:wishFlash .65s ease-out forwards;
+}
+@keyframes wishFlash{to{width:270px;height:270px;opacity:0}}
+.wishReveal{
+  position:absolute;inset:0;z-index:20;display:grid;place-items:center;
+  background:#02071699;backdrop-filter:blur(6px);
+}
+.wishReveal .card{width:min(580px,90vw);animation:memoryReveal .5s ease both}
+.wishReveal .wishStarIcon{font-size:55px;margin-bottom:4px}
+.wishReveal blockquote{
+  margin:20px 0;padding:20px;border-left:2px solid #ffe98a66;
+  color:#fff3b0;font-size:21px;line-height:1.55;
+}
+@media(max-width:600px){
+  #wishRoom .roomTitle{top:5%}
+  #wishRoom .roomTitle p{font-size:13px}
+  #wishRoom .wishComposer{bottom:3%;display:block;padding:10px}
+  #wishRoom .wishComposer textarea{width:100%;box-sizing:border-box;margin-bottom:7px}
+  #wishRoom .wishComposer button{width:100%}
+}
+</style>
 </head>
 <body><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
@@ -266,7 +346,6 @@ textarea{min-height:110px;resize:vertical}
 <button id="archiveBtn">📖 Ricordi raccolti</button>
 <button id="randomBtn">🎁 Sorpresa</button>
 <button id="wishBtn">🌠 Esprimi un desiderio</button>
-<button id="musicBtn">♫ Musica</button>
 <button id="aboutBtn">💛 Per Nonna Teresa</button>
 <div id="toast"></div>
 
@@ -316,14 +395,7 @@ textarea{min-height:110px;resize:vertical}
   <div class="actionRow"><button id="closeRandom" class="secondary">Torna al cielo 🌙</button></div>
 </div></div>
 
-<div id="wish" class="overlay hidden"><div class="card">
-  <div class="wishGlow"></div>
-  <div class="eyebrow">Una lucciola speciale</div>
-  <h2>Esprimi un desiderio per Nonna Teresa</h2>
-  <p>Scrivi un desiderio, un augurio o qualcosa che vorresti accompagnasse Nonna Teresa nel suo nuovo anno.</p>
-  <textarea id="wishText" maxlength="700" placeholder="Vorrei che..."></textarea>
-  <div class="actionRow"><button id="sendWish">Lascia volare il desiderio 🌠</button><button id="closeWish" class="secondary">Non ora</button></div>
-</div></div>
+</div>
 
 <div id="aboutTeresa" class="overlay hidden"><div class="card">
   <div class="bigHeart">💛</div>
@@ -335,9 +407,21 @@ textarea{min-height:110px;resize:vertical}
   <div class="actionRow"><button id="closeAbout" class="secondary">Torna al cielo 🌙</button></div>
 </div></div>
 
-<audio id="ambientMusic" loop preload="none">
-  <!-- Inserire qui una traccia scelta da voi quando la versione definitiva avrà l'audio -->
-</audio>
+
+<div id="wishRoom" class="hidden">
+  <div class="roomTitle">
+    <div class="eyebrow">🌠 La stanza dei desideri</div>
+    <h2>Prendi una stella cadente</h2>
+    <p>Ogni desiderio diventa una stella. Quando la prendi, scopri l'augurio che custodisce.</p>
+    <div class="wishCount">✨ <span id="wishCount">0</span> desideri nel cielo</div>
+  </div>
+  <div id="wishStars"></div>
+  <div class="wishComposer">
+    <textarea id="wishRoomText" maxlength="700" placeholder="Scrivi un desiderio o un augurio per Nonna Teresa..."></textarea>
+    <button id="addWishStar">Affidalo a una stella 🌠</button>
+    <button id="closeWishRoom" class="secondary">Torna al cielo</button>
+  </div>
+</div>
 
 <div id="final" class="overlay hidden"><div class="finalStars" id="finalStars"></div><div class="card">
 <div style="font-size:62px">🫙✨</div><div class="eyebrow">Ottanta luci</div>
@@ -386,6 +470,7 @@ function saveState(){
  }
 }
 loadSaved();
+loadWishes();
 $("fireflyCount").textContent=collected;
 
 function rand(a,b){return Math.random()*(b-a)+a}
@@ -477,22 +562,110 @@ function showRandomMemory(){
   $("randomMemoryContent").innerHTML=photo+`<div class="eyebrow">Una luce scelta a caso</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
   $("randomMemory").classList.remove("hidden");
 }
-function launchWish(){
-  const text=$("wishText").value.trim();
-  if(!text){toast("Scrivi un piccolo desiderio per Nonna Teresa 💛");return}
-  const s=document.createElement("div");s.className="firefly";
-  const x=rand(25,75),y=rand(55,80);s.style.left=x+"vw";s.style.top=y+"vh";s.style.background="#fff2a0";s.style.boxShadow="0 0 16px 7px #fff2a0";
-  s.style.zIndex=140;world.appendChild(s);
-  const dx=rand(-18,18),dy=rand(-60,-35);
-  s.animate([{transform:"scale(1)",opacity:1},{transform:`translate(${dx}vw,${dy}vh) scale(.25)`,opacity:0}],{duration:2600,easing:"ease-out"}).onfinish=()=>s.remove();
-  $("wishText").value="";$("wish").classList.add("hidden");
-  toast("🌠 Il desiderio di Nonna Teresa è volato tra le stelle.");
-}
 function secretMessage(text){
   const old=document.querySelector(".secretMessage");if(old)old.remove();
   const d=document.createElement("div");d.className="secretMessage";d.textContent=text;document.body.appendChild(d);
   setTimeout(()=>d.remove(),4200);
 }
+
+/* Ambient sound: generated locally with Web Audio API — no copyrighted audio file. */
+let ambientCtx=null, ambientGain=null, ambientTimer=null;
+function startAmbient(){
+  if(ambientCtx)return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    ambientCtx=new AC(); ambientGain=ambientCtx.createGain();
+    ambientGain.gain.value=.035; ambientGain.connect(ambientCtx.destination);
+    const master=ambientGain;
+    const notes=[196,220,261.63,293.66,329.63,392];
+    let step=0;
+    function chime(){
+      if(!ambientCtx)return;
+      const osc=ambientCtx.createOscillator(), g=ambientCtx.createGain();
+      osc.type="sine"; osc.frequency.value=notes[step++%notes.length];
+      g.gain.setValueAtTime(0,ambientCtx.currentTime);
+      g.gain.linearRampToValueAtTime(.12,ambientCtx.currentTime+.8);
+      g.gain.exponentialRampToValueAtTime(.001,ambientCtx.currentTime+5.5);
+      osc.connect(g);g.connect(master);osc.start();osc.stop(ambientCtx.currentTime+5.6);
+    }
+    chime();ambientTimer=setInterval(chime,3600);
+  }catch(e){}
+}
+
+let wishes=[];
+const WISH_KEY="lucciole_nonna_teresa_wishes_v1";
+function loadWishes(){
+  try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");}
+  catch(e){wishes=[]}
+  $("wishCount").textContent=wishes.length;
+}
+function saveWishes(){
+  try{localStorage.setItem(WISH_KEY,JSON.stringify(wishes));}catch(e){}
+  $("wishCount").textContent=wishes.length;
+}
+function createWishStar(wish,initial=false){
+  const star=document.createElement("div");
+  star.className="wishStar";
+  star.dataset.wish=wish;
+  const x=rand(5,94), delay=initial?rand(0,4):rand(0,.5);
+  star.style.left=x+"%";
+  star.style.top="-30px";
+  const duration=rand(4200,7600);
+  const endX=rand(-12,12);
+  star.animate(
+    [{transform:"translate(0,0) rotate(-25deg)",opacity:0},
+     {transform:`translate(${endX}vw,${rand(28,58)}vh) rotate(-25deg)`,opacity:1,offset:.28},
+     {transform:`translate(${endX*1.7}vw,110vh) rotate(-25deg)`,opacity:.15}],
+    {duration,delay,easing:"linear",fill:"forwards"}
+  );
+  star.onclick=(ev)=>{
+    ev.stopPropagation();
+    showWishReveal(wish,star);
+  };
+  $("wishStars").appendChild(star);
+  setTimeout(()=>{if(star.isConnected)star.remove()},duration+delay+300);
+}
+function showWishReveal(wish,star){
+  const r=star.getBoundingClientRect();
+  const flash=document.createElement("div");flash.className="wishFlash";
+  flash.style.left=r.left+r.width/2+"px";flash.style.top=r.top+r.height/2+"px";
+  document.body.appendChild(flash);setTimeout(()=>flash.remove(),700);
+  const layer=document.createElement("div");layer.className="wishReveal";
+  layer.innerHTML=`<div class="card">
+    <div class="wishStarIcon">🌠</div>
+    <div class="eyebrow">Un augurio per Nonna Teresa</div>
+    <h2>Hai preso una stella.</h2>
+    <blockquote>“${escapeHtml(wish)}”</blockquote>
+    <button class="secondary">Lascia brillare il desiderio ✨</button>
+  </div>`;
+  layer.querySelector("button").onclick=()=>layer.remove();
+  $("wishRoom").appendChild(layer);
+  star.remove();
+}
+function openWishRoom(){
+  startAmbient();
+  loadWishes();
+  $("wishRoom").classList.remove("hidden");
+  $("wishRoomText").focus();
+  // Keep a gentle, continuous shower; every stored wish is represented by repeated stars.
+  if(!window.wishShower){
+    window.wishShower=setInterval(()=>{
+      if(!$("wishRoom").classList.contains("hidden") && wishes.length){
+        const w=wishes[Math.floor(Math.random()*wishes.length)];
+        createWishStar(w);
+      }
+    },1250);
+  }
+}
+function addWish(){
+  const input=$("wishRoomText"), text=input.value.trim();
+  if(!text){toast("Scrivi prima un desiderio per Nonna Teresa ✨");return}
+  wishes.push(text);saveWishes();input.value="";
+  createWishStar(text);
+  toast("🌠 Il desiderio è diventato una stella.");
+}
+
 function showFinal(){
  const layer=$("finalStars");layer.innerHTML="";
  for(let i=0;i<80;i++){
@@ -574,26 +747,23 @@ $("continue").onclick=()=>{$("final").classList.add("hidden");$("finalStars").in
 
 $("randomBtn").onclick=showRandomMemory;
 $("closeRandom").onclick=()=>$("randomMemory").classList.add("hidden");
-$("wishBtn").onclick=()=>$("wish").classList.remove("hidden");
-$("closeWish").onclick=()=>$("wish").classList.add("hidden");
-$("sendWish").onclick=launchWish;
 $("aboutBtn").onclick=()=>$("aboutTeresa").classList.remove("hidden");
 $("closeAbout").onclick=()=>$("aboutTeresa").classList.add("hidden");
 
-$("musicBtn").onclick=()=>{
-  const audio=$("ambientMusic");
-  if(!audio.src){
-    toast("♫ La musica arriverà nella versione finale.");
-    return;
-  }
-  if(audio.paused){audio.play();$("musicBtn").classList.add("active");$("musicBtn").textContent="♫ Musica ON"}
-  else{audio.pause();$("musicBtn").classList.remove("active");$("musicBtn").textContent="♫ Musica"}
-};
 
 $("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
 document.querySelectorAll(".butterfly").forEach((b,i)=>{
   b.style.cursor="pointer";
   b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
+});
+
+
+$("addWishStar").onclick=addWish;
+$("closeWishRoom").onclick=()=>{
+  $("wishRoom").classList.add("hidden");
+};
+$("wishRoomText").addEventListener("keydown",e=>{
+  if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){e.preventDefault();addWish();}
 });
 
 $("saveGift").onclick=()=>{
