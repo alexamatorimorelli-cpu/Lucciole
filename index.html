@@ -82,6 +82,7 @@ textarea{min-height:110px;resize:vertical}
 #toast.show{opacity:1;transform:translateX(-50%)}
 #photoPreview{display:none;width:100%;max-height:230px;object-fit:cover;border-radius:15px;margin-top:10px}
 @media(max-width:600px){#jar{width:57vw;height:53vh;top:57%;min-width:205px}.moon{width:48px;height:48px}.moon:after{width:44px;height:44px}.card{padding:28px 19px}.card p{font-size:16px}#hint{bottom:62px;font-size:12px}#giftBtn,#archiveBtn,#randomBtn,#wishBtn,#musicBtn,#aboutBtn{font-size:11px;padding:8px 9px}#giftBtn{left:7px}#archiveBtn{right:7px}#randomBtn{left:7px;bottom:58px}#wishBtn{left:110px;bottom:58px}#musicBtn{right:7px;bottom:58px}#aboutBtn{right:108px;bottom:58px}}
+#sharedStatus{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;padding:7px 12px;border-radius:18px;background:#241c0b;color:#ffe9a0;font:11px Arial,sans-serif;display:none} 
 </style>
 
 <style>
@@ -385,7 +386,7 @@ textarea{min-height:110px;resize:vertical}
 @keyframes starCaught{0%{transform:scale(1);opacity:1}35%{transform:scale(2.5);opacity:1}100%{transform:scale(.1);opacity:0}}
 </style>
 </head>
-<body><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
+<body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
 <div id="counter">✨ <b id="count">0</b> lucciole nel barattolo</div>
 <div id="progress80">Ogni luce è un ricordo in più.</div>
@@ -404,7 +405,7 @@ textarea{min-height:110px;resize:vertical}
 <p>Ci sono ricordi che non fanno rumore.<br>Restano lì, piccoli piccoli, come lucciole nella notte.</p>
 <p><strong>Se li metti tutti insieme, però,<br>possono illuminare una vita intera.</strong></p>
 <p><strong>Prima di cominciare...</strong><br>Mi raccomando: <strong>cantate con voi la canzone</strong>,<br>o la lucciola non verrà da voi. 🌙</p>
-<button id="begin" type="button" onclick="window.startSiteNow()">Cominciamo ✨</button>
+<button id="begin" type="button" onclick="window.startSiteNow(); startAmbient()">Cominciamo ✨</button>
 </div></div>
 
 <!-- After a capture: this is where the new memory is attached -->
@@ -481,45 +482,73 @@ textarea{min-height:110px;resize:vertical}
 <button id="continue">Restare ancora un po' sotto le stelle ✨</button>
 </div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window.SUPABASE_URL = "INCOLLA_QUI_IL_PROJECT_URL";
+window.SUPABASE_ANON_KEY = "INCOLLA_QUI_LA_ANON_KEY";
+</script>
 <script>
 const colors=["#ffd66e","#8ed8ff","#d9a8ff","#8dffa9","#ffadcf","#ffb36e"];
-const STORAGE_KEY="lucciole_nonna_teresa_v11";
-const defaultMemories=[
- {title:"Le nostre passeggiate",text:"Qui inseriremo il ricordo vero della campagna e delle nostre passeggiate.",quote:"“Le lucciole sembravano stelle scese sulla terra.”",color:colors[0],image:"",author:"",seed:true},
- {title:"Una giornata speciale",text:"Un posto per una giornata che vuoi conservare.",quote:"“Alcune giornate restano accese.”",color:colors[1],image:"",author:"",seed:true},
- {title:"Una cosa che amo di te",text:"Un messaggio per Nonna Teresa.",quote:"“Ci sono persone che fanno luce senza saperlo.”",color:colors[2],image:"",author:"",seed:true},
- {title:"Una storia di famiglia",text:"Una storia che merita di essere ricordata.",quote:"“Le storie passano di voce in voce.”",color:colors[3],image:"",author:"",seed:true},
- {title:"Una sorpresa",text:"Questa lucciola è pronta per una sorpresa.",quote:"“Psst... ce n'è ancora una.”",color:colors[4],image:"",author:"",seed:true},
- {title:"Un ricordo da riempire",text:"Una fotografia e le parole di qualcuno che vuole bene a Nonna Teresa.",quote:"“Una piccola luce, un grande ricordo.”",color:colors[5],image:"",author:"",seed:true}
-];
 let memories=[],collected=0,active=null,offsetX=0,offsetY=0,fireflyId=0,currentMemoryIndex=null;
 const $=id=>document.getElementById(id),jar=$("jar"),world=$("world");
 
-function loadSaved(){
- try{
-  const raw=localStorage.getItem(STORAGE_KEY);
-  if(raw){
-   const data=JSON.parse(raw);
-   memories=Array.isArray(data.memories)?data.memories:[...defaultMemories];
-   collected=Number(data.collected)||0;
-  }else{
-   memories=[...defaultMemories];collected=0;
-  }
- }catch(e){memories=[...defaultMemories];collected=0}
+const SHARED_ENABLED=!!(
+ window.supabase &&
+ window.SUPABASE_URL && window.SUPABASE_ANON_KEY &&
+ !window.SUPABASE_URL.includes("INCOLLA_QUI") &&
+ !window.SUPABASE_ANON_KEY.includes("INCOLLA_QUI")
+);
+let supabaseClient=null;
+if(SHARED_ENABLED){
+ try{supabaseClient=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);}
+ catch(e){console.warn(e);}
 }
-function saveState(){
+
+function setCounts(){
+ collected=memories.filter(Boolean).length;
+ $("count").textContent=collected;
+ $("fireflyCount").textContent=collected;
+ $("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.30,.05+collected*.012)}),transparent 68%)`;
+ if(collected>=10)jar.classList.add("luminous");
+}
+function localFallbackLoad(){
  try{
-  localStorage.setItem(STORAGE_KEY,JSON.stringify({
-   memories,
-   collected,
-   savedAt:new Date().toISOString()
-  }));
- }catch(e){
-  toast("Il browser non ha abbastanza spazio per salvare questo ricordo.");
+  const d=JSON.parse(localStorage.getItem("lucciole_nonna_teresa_v11")||"{}");
+  memories=Array.isArray(d.memories)?d.memories.filter(m=>m&&(m.user||m.adopted)).map(m=>({...m,id:m.id||crypto.randomUUID()})):[];
+ }catch(e){memories=[]}
+ setCounts();
+}
+async function loadSharedMemories(){
+ if(!supabaseClient){localFallbackLoad();return;}
+ const {data,error}=await supabaseClient.from("memories").select("id,author,text,quote,color,image_url,created_at").order("created_at",{ascending:true});
+ if(error){console.error(error);toast("Non riesco a collegarmi al barattolo condiviso.");return;}
+ memories=(data||[]).map(r=>({id:r.id,author:r.author||"",text:r.text||"",quote:r.quote||"",color:r.color||colors[0],image:r.image_url||"",user:true,adopted:true}));
+ setCounts(); restoreSavedJar();
+}
+async function insertSharedMemory({author,text,quote,color,imageFile}){
+ if(!supabaseClient)return {error:new Error("Supabase non configurato")};
+ let image_url="";
+ if(imageFile){
+  const safe=(imageFile.name||"foto").replace(/[^a-zA-Z0-9._-]/g,"_");
+  const path=crypto.randomUUID()+"-"+safe;
+  const up=await supabaseClient.storage.from("memory-photos").upload(path,imageFile,{cacheControl:"3600",upsert:false,contentType:imageFile.type||"image/jpeg"});
+  if(up.error)return {error:up.error};
+  image_url=supabaseClient.storage.from("memory-photos").getPublicUrl(path).data.publicUrl;
  }
+ return await supabaseClient.from("memories").insert({
+  author:author||"Una persona che ti vuole bene",
+  text:text||"Una fotografia senza parole.",
+  quote:quote||"",
+  color,
+  image_url
+ });
 }
-loadSaved();
-$("fireflyCount").textContent=collected;
+function requireShared(){
+ if(supabaseClient)return true;
+ toast("Configura Supabase per condividere il barattolo con tutti.");
+ return false;
+}
+if(!SHARED_ENABLED){localFallbackLoad();const s=document.getElementById("sharedStatus");if(s)s.style.display="block";}
 
 function rand(a,b){return Math.random()*(b-a)+a}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2400)}
@@ -571,29 +600,28 @@ function openAdoption(f){
  $("memoryAuthor").value="";$("memoryText").value="";$("memoryPhoto").value="";$("photoPreview").style.display="none";
  $("adopt").dataset.pendingId=fireflyId; $("adopt").classList.remove("hidden");
 }
-function createAdoptedMemory(){
+async function createAdoptedMemory(){
  const author=$("memoryAuthor").value.trim()||"Una persona che ti vuole bene";
  const text=$("memoryText").value.trim();
  const file=$("memoryPhoto").files[0];
  if(!text&&!file){toast("Puoi lasciare anche solo una frase o una fotografia 💛");return}
- const save=image=>{
-  const idx=memories.length,c=colors[idx%colors.length];
-  memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:true});
-  finishAdoption(idx,c);
- };
- if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("");
+ if(!requireShared())return;
+ const color=colors[memories.length%colors.length];
+ const quote=text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”";
+ $("adoptSave").disabled=true;
+ try{
+  const {error}=await insertSharedMemory({author,text,quote,color,imageFile:file});
+  if(error)throw error;
+  $("adopt").classList.add("hidden");
+  $("memoryAuthor").value="";$("memoryText").value="";$("memoryPhoto").value="";
+  $("photoPreview").style.display="none";
+  await loadSharedMemories();
+  toast("✨ La lucciola è stata adottata per tutti.");
+ }catch(e){console.error(e);toast("Non sono riuscito a salvare la lucciola.");}
+ finally{$("adoptSave").disabled=false;}
 }
 function finishAdoption(idx,c){
- saveState();
  const flash=document.createElement("div");flash.className="jarFlash";flash.style.setProperty("--c",c);jar.appendChild(flash);setTimeout(()=>flash.remove(),900);
- const d=document.createElement("div");d.className="injar";d.dataset.memory=idx;d.style.left=rand(12,88)+"%";d.style.top=rand(18,88)+"%";d.style.background=c;d.style.boxShadow=`0 0 13px 5px ${c}`;d.onclick=()=>showMemory(idx);jar.appendChild(d);
- collected++;$("count").textContent=collected; $("fireflyCount").textContent=collected;$("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.30,.05+collected*.012)}),transparent 68%)`;
- if(collected>=10)jar.classList.add("luminous");
- saveState();
- $("adopt").classList.add("hidden");toast("✨ La lucciola è stata adottata.");
- // Regenerate a fresh neutral firefly so there are always many to collect.
- setTimeout(()=>makeFirefly(null),420);
- if(collected===80)setTimeout(showFinal,1100);
 }
 
 
@@ -621,55 +649,46 @@ function secretMessage(text){
 }
 
 
-/* Ambient sound: generated locally with Web Audio API — no external/copyrighted track. */
-let ambientCtx=null, ambientGain=null, ambientTimer=null;
-function startAmbient(){
-  if(ambientCtx){
-    if(ambientCtx.state==="suspended") ambientCtx.resume().catch(()=>{});
-    return;
+/* Audio rilassante generato localmente: nessun file esterno/copyright. */
+let ambientCtx=null,ambientMaster=null,ambientTimer=null;
+async function startAmbient(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!ambientCtx){
+   ambientCtx=new AC();
+   ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.075;ambientMaster.connect(ambientCtx.destination);
+   [196,261.63,329.63].forEach((f,i)=>{
+    const o=ambientCtx.createOscillator(),g=ambientCtx.createGain();o.type="sine";o.frequency.value=f;g.gain.value=i?0.006:0.01;o.connect(g);g.connect(ambientMaster);o.start();
+   });
+   const notes=[261.63,293.66,329.63,392,329.63,293.66];let step=0;
+   const chime=()=>{
+    const now=ambientCtx.currentTime,o=ambientCtx.createOscillator(),g=ambientCtx.createGain();
+    o.type="sine";o.frequency.value=notes[step++%notes.length];
+    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.12,now+.18);g.gain.exponentialRampToValueAtTime(.0001,now+3.2);
+    o.connect(g);g.connect(ambientMaster);o.start(now);o.stop(now+3.3);
+   };
+   chime();ambientTimer=setInterval(chime,2600);
   }
-  try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)return;
-    ambientCtx=new AC();
-    ambientGain=ambientCtx.createGain();
-    ambientGain.gain.value=.025;
-    ambientGain.connect(ambientCtx.destination);
-    const notes=[196,220,261.63,293.66,329.63,392];
-    let step=0;
-    const chime=()=>{
-      if(!ambientCtx)return;
-      const osc=ambientCtx.createOscillator(), g=ambientCtx.createGain();
-      osc.type="sine";
-      osc.frequency.value=notes[step++%notes.length];
-      g.gain.setValueAtTime(.0001,ambientCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(.09,ambientCtx.currentTime+.8);
-      g.gain.exponentialRampToValueAtTime(.0001,ambientCtx.currentTime+4.5);
-      osc.connect(g);g.connect(ambientGain);
-      osc.start();osc.stop(ambientCtx.currentTime+4.6);
-    };
-    chime();
-    ambientTimer=setInterval(chime,3600);
-  }catch(e){}
+  if(ambientCtx.state==="suspended")await ambientCtx.resume();
+ }catch(e){console.warn("Audio non disponibile",e);}
 }
+
 
 let wishes=[];
 const WISH_KEY="lucciole_nonna_teresa_wishes_v2";
-
-function loadWishes(){
-  try{
-    const raw=localStorage.getItem(WISH_KEY);
-    wishes=raw?JSON.parse(raw):[];
-    if(!Array.isArray(wishes))wishes=[];
-  }catch(e){wishes=[]}
-  const count=$("wishCount");
-  if(count)count.textContent=wishes.length;
+async function loadWishes(){
+ if(supabaseClient){
+  const {data,error}=await supabaseClient.from("wishes").select("id,text,created_at").order("created_at",{ascending:true});
+  if(error){console.error(error);return;}
+  wishes=(data||[]).map(w=>({id:w.id,text:w.text}));
+ }else{
+  try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");if(!Array.isArray(wishes))wishes=[];}catch(e){wishes=[]}
+ }
+ const c=$("wishCount");if(c)c.textContent=wishes.length;
 }
-
-function saveWishes(){
-  try{localStorage.setItem(WISH_KEY,JSON.stringify(wishes));}catch(e){}
-  const count=$("wishCount");
-  if(count)count.textContent=wishes.length;
+async function saveWishes(){
+ if(!supabaseClient)try{localStorage.setItem(WISH_KEY,JSON.stringify(wishes));}catch(e){}
+ const c=$("wishCount");if(c)c.textContent=wishes.length;
 }
 
 function createWishStar(wish){
@@ -775,21 +794,15 @@ function closeWishRoom(){
   if(room)room.classList.add("hidden");
 }
 
-function addWish(){
-  const input=$("wishRoomText");
-  if(!input)return;
-  const text=input.value.trim();
-  if(!text){
-    toast("Scrivi prima un desiderio per Nonna Teresa ✨");
-    input.focus();
-    return;
-  }
-
-  wishes.push(text);
-  saveWishes();
-  input.value="";
-  createWishStar(text);
-  toast("🌠 Il desiderio è diventato una stella.");
+async function addWish(){
+ const input=$("wishInput"),text=(input?.value||"").trim();
+ if(!text){toast("Scrivi prima un desiderio ✨");return}
+ if(supabaseClient){
+  const {error}=await supabaseClient.from("wishes").insert({text});
+  if(error){console.error(error);toast("Non sono riuscito a salvare il desiderio.");return;}
+  input.value="";await loadWishes();openWishRoom();toast("⭐ Il desiderio è entrato nella stanza delle stelle.");return;
+ }
+ wishes.push({id:crypto.randomUUID(),text});input.value="";await saveWishes();openWishRoom();
 }
 
 function showFinal(){
@@ -808,27 +821,17 @@ function showMemory(i){
  $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
  $("memory").classList.remove("hidden")
 }
-function deleteCurrentMemory(){
- const i=currentMemoryIndex;
- if(i===null||!memories[i])return;
- const m=memories[i];
+async function deleteCurrentMemory(){
+ const i=currentMemoryIndex,m=memories[i];
+ if(i===null||!m)return;
  if(!confirm("Vuoi davvero cancellare questo ricordo e la sua lucciola?"))return;
-
- // Remove the colored adopted light linked to this memory.
- jar.querySelectorAll(".injar").forEach(dot=>{
-   if(Number(dot.dataset.memory)===i) dot.remove();
- });
-
- // Keep array indexes stable by replacing the record with null rather than
- // shifting everything (important because existing lights store their index).
- memories[i]=null;
- collected=Math.max(0,collected-1);
- $("count").textContent=collected; $("fireflyCount").textContent=collected;
- saveState();
- $("memory").classList.add("hidden");
- currentMemoryIndex=null;
- toast("🗑️ Ricordo cancellato.");
+ if(!requireShared())return;
+ const {error}=await supabaseClient.from("memories").delete().eq("id",m.id);
+ if(error){console.error(error);toast("Non sono riuscito a cancellare il ricordo.");return;}
+ $("memory").classList.add("hidden");currentMemoryIndex=null;
+ await loadSharedMemories();toast("🗑️ Ricordo cancellato per tutti.");
 }
+
 
 function renderArchive(){
  const g=$("grid");g.innerHTML="";
@@ -838,30 +841,35 @@ function renderArchive(){
  adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title)}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
 }
 function restoreSavedJar(){
- $("count").textContent=collected; $("fireflyCount").textContent=collected;
- const saved=memories.map((m,i)=>({m,i})).filter(x=>x.m&&(x.m.user||x.m.adopted));
- saved.slice(0,collected).forEach(x=>{
-  const d=document.createElement("div");d.className="injar";d.dataset.memory=x.i;
+ jar.querySelectorAll(".injar").forEach(d=>d.remove());
+ setCounts();
+ memories.forEach((m,i)=>{
+  if(!m)return;
+  const d=document.createElement("div");d.className="injar";d.dataset.memory=i;
   d.style.left=rand(12,88)+"%";d.style.top=rand(18,88)+"%";
-  d.style.background=x.m.color;d.style.boxShadow=`0 0 13px 5px ${x.m.color}`;
-  d.onclick=()=>showMemory(x.i);jar.appendChild(d);
+  d.style.background=m.color;d.style.boxShadow=`0 0 13px 5px ${m.color}`;
+  d.onclick=()=>showMemory(i);jar.appendChild(d);
  });
- $("jarGlow").style.background=`radial-gradient(circle,rgba(255,235,120,${Math.min(.30,.05+collected*.012)}),transparent 68%)`;
- if(collected>=10)jar.classList.add("luminous");
 }
-function beginWorld(){
- startAmbient();
+
+async function beginWorld(){
+ await startAmbient();
  $("start").classList.add("hidden");
- restoreSavedJar();
  for(let i=0;i<12;i++)makeFirefly(null);
+ if(supabaseClient){
+  await loadSharedMemories();
+  try{supabaseClient.channel("lucciole-realtime").on("postgres_changes",{event:"*",schema:"public",table:"memories"},()=>loadSharedMemories()).subscribe();}catch(e){console.warn(e);}
+ }else restoreSavedJar();
 }
 $("begin").onclick=beginWorld;
 
 $("adoptSave").onclick=createAdoptedMemory;
-$("adoptSkip").onclick=()=>{
- const c=colors[memories.length%colors.length],idx=memories.length;
- memories.push({title:"Una luce per Nonna Teresa",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c,image:"",author:"",user:true,adopted:true});
- finishAdoption(idx,c);
+$("adoptSkip").onclick=async()=>{
+ if(!requireShared())return;
+ const c=colors[memories.length%colors.length];
+ const {error}=await insertSharedMemory({author:"Una persona che ti vuole bene",text:"Questa lucciola è stata adottata senza parole.",quote:"“A volte basta esserci.”",color:c});
+ if(error){console.error(error);toast("Non sono riuscito a salvare la lucciola.");return;}
+ $("adopt").classList.add("hidden");await loadSharedMemories();toast("✨ La lucciola è stata adottata per tutti.");
 };
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
 $("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
