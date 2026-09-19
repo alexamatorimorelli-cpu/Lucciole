@@ -389,6 +389,29 @@ textarea{min-height:110px;resize:vertical}
 .wishStar.caught{animation:starCaught .65s ease-out forwards!important}
 @keyframes starCaught{0%{transform:scale(1);opacity:1}35%{transform:scale(2.5);opacity:1}100%{transform:scale(.1);opacity:0}}
 </style>
+
+<style>
+#release80.hidden{display:none!important}
+#release80{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(5,8,18,.72);backdrop-filter:blur(8px)}
+#release80 .releaseCard{width:min(520px,92vw);padding:30px 24px;border:1px solid rgba(255,240,180,.35);border-radius:28px;background:linear-gradient(180deg,rgba(40,32,25,.96),rgba(16,20,32,.96));box-shadow:0 20px 70px #000b;text-align:center;color:#fff4cf}
+#release80 h2{margin:0 0 12px;font-size:clamp(25px,6vw,38px)}
+#release80 p{margin:0 auto 22px;line-height:1.6;color:#eadfbf}
+#release80 .releaseActions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#release80 button{border:0;border-radius:999px;padding:13px 20px;font-weight:700;font-size:15px;cursor:pointer;touch-action:manipulation}
+#release80Confirm{background:#ffe27a;color:#2b210b;box-shadow:0 0 28px rgba(255,220,100,.28)}
+#release80Cancel{background:rgba(255,255,255,.10);color:#fff}
+#releaseFinal.hidden{display:none!important}
+#releaseFinal{position:fixed;inset:0;z-index:10001;overflow:hidden;background:radial-gradient(circle at 50% 42%,#33405d 0,#11192c 42%,#050812 100%);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff4cf}
+#releaseFinal .finalContent{position:relative;z-index:3;width:min(720px,90vw)}
+#releaseFinal h1{font-size:clamp(32px,8vw,64px);margin:0 0 15px;text-shadow:0 0 25px rgba(255,220,120,.45)}
+#releaseFinal p{font-size:clamp(16px,4vw,22px);line-height:1.7;margin:0 auto;max-width:620px;color:#eadfbf}
+.releaseFirefly{position:absolute;width:8px;height:8px;border-radius:50%;background:#ffe87b;box-shadow:0 0 10px 5px #ffe87b;animation:releaseFly 4.5s ease-out forwards}
+@keyframes releaseFly{
+  0%{transform:translate(0,0) scale(.7);opacity:0}
+  12%{opacity:1}
+  100%{transform:translate(var(--tx),var(--ty)) scale(1.4);opacity:.95}
+}
+</style>
 </head>
 <body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
@@ -700,6 +723,7 @@ window.adoptFireflyMemory=async function(){
    if(preview) preview.style.display="none";
 
    await loadSharedMemories();
+   maybeOfferRelease80();
    makeFirefly(null);
    toast("✨ Lucciola adottata!");
  }catch(error){
@@ -965,7 +989,8 @@ async function beginWorld(){
  for(let i=0;i<12;i++)makeFirefly(null);
  if(supabaseClient){
   await loadSharedMemories();
-  try{supabaseClient.channel("lucciole-realtime").on("postgres_changes",{event:"*",schema:"public",table:"memories"},()=>loadSharedMemories()).subscribe();}catch(e){console.warn(e);}
+  maybeOfferRelease80();
+  try{supabaseClient.channel("lucciole-realtime").on("postgres_changes",{event:"*",schema:"public",table:"memories"},()=>{loadSharedMemories().then(maybeOfferRelease80)}).subscribe();}catch(e){console.warn(e);}
  }else restoreSavedJar();
 }
 $("begin").onclick=beginWorld;
@@ -1057,6 +1082,74 @@ if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
 if(_soundToggle)_soundToggle.onclick=toggleAmbient;
+
+function maybeOfferRelease80(){
+  const release=document.getElementById("release80");
+  if(!release)return;
+  const total=memories.filter(Boolean).length;
+  if(total>=80 && !localStorage.getItem("nonnaTeresaReleaseDone")){
+    release.classList.remove("hidden");
+    release.setAttribute("aria-hidden","false");
+  }
+}
+
+function cancelRelease80(){
+  const release=document.getElementById("release80");
+  if(!release)return;
+  release.classList.add("hidden");
+  release.setAttribute("aria-hidden","true");
+}
+
+function launchRelease80(){
+  const release=document.getElementById("release80");
+  const final=document.getElementById("releaseFinal");
+  if(release)release.classList.add("hidden");
+  if(!final)return;
+
+  localStorage.setItem("nonnaTeresaReleaseDone","1");
+  final.classList.remove("hidden");
+  final.setAttribute("aria-hidden","false");
+
+  // Empty the visual jar and release 80 lights toward the sky.
+  if(jar){
+    jar.querySelectorAll(".injar").forEach(el=>{
+      el.animate(
+        [{transform:"translate(0,0) scale(1)",opacity:1},
+         {transform:`translate(${rand(-180,180)}px,${rand(-260,-90)}px) scale(.35)`,opacity:0}],
+        {duration:1500+Math.random()*900,easing:"ease-out",fill:"forwards"}
+      );
+    });
+    setTimeout(()=>jar.querySelectorAll(".injar").forEach(el=>el.remove()),2600);
+  }
+
+  for(let i=0;i<80;i++){
+    const star=document.createElement("div");
+    star.className="releaseFirefly";
+    star.style.left=rand(10,90)+"%";
+    star.style.top=rand(45,88)+"%";
+    star.style.setProperty("--tx",rand(-45,45)+"vw");
+    star.style.setProperty("--ty",rand(-65,-18)+"vh");
+    star.style.animationDelay=(i*18)+"ms";
+    final.appendChild(star);
+  }
+}
 </script>
+<div id="release80" class="hidden" aria-hidden="true">
+  <div class="releaseCard">
+    <h2>✨ 80 lucciole ✨</h2>
+    <p>Sei sicura di volerle liberare tutte in cielo?</p>
+    <div class="releaseActions">
+      <button type="button" id="release80Cancel" onclick="cancelRelease80()">Aspetta ancora</button>
+      <button type="button" id="release80Confirm" onclick="launchRelease80()">Sì, liberiamole ✨</button>
+    </div>
+  </div>
+</div>
+<div id="releaseFinal" class="hidden" aria-hidden="true">
+  <div class="finalContent">
+    <h1>Buon 80° compleanno, Nonna Teresa ✨</h1>
+    <p>Una lucciola è piccola. Un ricordo anche.<br>
+    Ma quando ne raccogli 80, possono illuminare una vita intera.</p>
+  </div>
+</div>
 </body>
 </html>
