@@ -850,9 +850,6 @@ document.querySelectorAll(".butterfly").forEach((b,i)=>{
 });
 
 
-  $("wishRoom").classList.add("hidden");
-};
-
 $("saveGift").onclick=()=>{
  const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
  if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
@@ -872,7 +869,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(wb)wb.addEventListener("click",openWishRoom);
   if(add)add.addEventListener("click",addWish);
   if(close)close.addEventListener("click",closeWishRoom);
-  loadWishes();
   if(input)input.addEventListener("keydown",e=>{
     if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
       e.preventDefault();
@@ -881,6 +877,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
   loadWishes();
 });
+// Direct fallback for static GitHub Pages loading.
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom");
+if(_wishBtn)_wishBtn.onclick=openWishRoom;
+if(_addWish)_addWish.onclick=addWish;
+if(_closeWish)_closeWish.onclick=closeWishRoom;
 </script>
 </body>
 </html>
