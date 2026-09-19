@@ -434,7 +434,7 @@ textarea{min-height:110px;resize:vertical}
 <label>Il tuo nome</label><input id="sender" maxlength="60" placeholder="Come vuoi firmarti?">
 <label>Il tuo ricordo</label><textarea id="giftText" maxlength="1000" placeholder="Scrivi qualcosa per Nonna Teresa..."></textarea>
 <label>Una foto (facoltativa)</label><input id="photo" type="file" accept="image/*">
-<button id="saveGift">Accendi la lucciola ✨</button><button id="closeGift" class="secondary">Annulla</button>
+<button type="button" id="saveGift" onclick="window.saveGiftMemory()">Accendi la lucciola ✨</button><button id="closeGift" class="secondary">Annulla</button>
 </div></div>
 
 
@@ -522,7 +522,17 @@ async function loadSharedMemories(){
  if(!supabaseClient){localFallbackLoad();return;}
  const {data,error}=await supabaseClient.from("memories").select("id,author,text,quote,color,image_url,created_at").order("created_at",{ascending:true});
  if(error){console.error(error);toast("Non riesco a collegarmi al barattolo condiviso.");return;}
- memories=(data||[]).map(r=>({id:r.id,author:r.author||"",text:r.text||"",quote:r.quote||"",color:r.color||colors[0],image:r.image_url||"",user:true,adopted:true}));
+ memories=(data||[]).map(r=>({
+  id:r.id,
+  title:r.title||"Un ricordo per Nonna Teresa",
+  author:r.author||"",
+  text:r.text||"",
+  quote:r.quote||"",
+  color:r.color||colors[0],
+  image:r.image_url||"",
+  user:true,
+  adopted:true
+}));
  setCounts(); restoreSavedJar();
 }
 async function insertSharedMemory({author,text,quote,color,imageFile}){
@@ -676,7 +686,7 @@ function showRandomMemory(){
   if(!list.length){toast("Il libro è ancora vuoto. Prima raccogli una lucciola ✨");return}
   const i=list[Math.floor(Math.random()*list.length)],m=memories[i];
   const photo=m.image?`<img class="randomPhoto" src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
-  $("randomMemoryContent").innerHTML=photo+`<div class="eyebrow">Una luce scelta a caso</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+  $("randomMemoryContent").innerHTML=photo+`<div class="eyebrow">Una luce scelta a caso</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
   $("randomMemory").classList.remove("hidden");
 }
 function secretMessage(text){
@@ -864,7 +874,7 @@ function showFinal(){
 function showMemory(i){
  const m=memories[i];if(!m)return;currentMemoryIndex=i;
  const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
- $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title)}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+ $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
  $("memory").classList.remove("hidden")
 }
 async function deleteCurrentMemory(){
@@ -884,7 +894,7 @@ function renderArchive(){
  const adopted=getAdoptedIndexes();
  if(!adopted.length){g.innerHTML="<p>Nessuna lucciola è ancora stata adottata.<br>Il libro aspetta la sua prima storia. ✨</p>";return}
  const seen=new Set();
- adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title)}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
+ adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
 }
 function restoreSavedJar(){
  jar.querySelectorAll(".injar").forEach(d=>d.remove());
@@ -939,21 +949,36 @@ document.querySelectorAll(".butterfly").forEach((b,i)=>{
 });
 
 
-$("saveGift").onclick=async()=>{
+window.saveGiftMemory=async function(){
  const author=$("sender").value.trim()||"Una persona che ti vuole bene";
  const text=$("giftText").value.trim();
  const file=$("photo").files[0];
- if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
+ if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return;}
  if(!requireShared())return;
+
+ const button=$("saveGift");
+ if(button)button.disabled=true;
+
  const c=colors[memories.length%colors.length];
  const quote=text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”";
- const {error}=await insertSharedMemory({author,text,quote,color:c,imageFile:file});
- if(error){console.error(error);toast("Non sono riuscito a salvare il ricordo.");return}
- $("gift").classList.add("hidden");
- $("sender").value="";$("giftText").value="";$("photo").value="";
- await loadSharedMemories();
- makeFirefly(null);
- toast("✨ La tua lucciola è stata affidata al barattolo.");
+
+ try{
+   const result=await insertSharedMemory({author,text,quote,color:c,imageFile:file});
+   if(result.error)throw result.error;
+
+   $("gift").classList.add("hidden");
+   $("sender").value="";
+   $("giftText").value="";
+   $("photo").value="";
+   await loadSharedMemories();
+   makeFirefly(null);
+   toast("✨ La tua lucciola è stata affidata al barattolo.");
+ }catch(error){
+   console.error("Salvataggio lucciola:",error);
+   toast("Non sono riuscito a salvare la lucciola. Riprova tra poco.");
+ }finally{
+   if(button)button.disabled=false;
+ }
 };
 // Final initialization: all constants/functions now exist before we read wishes.
 
