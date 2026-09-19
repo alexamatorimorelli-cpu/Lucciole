@@ -226,7 +226,7 @@ textarea{min-height:110px;resize:vertical}
   #giftBtn{left:8px !important;bottom:12px !important}
   #archiveBtn{right:8px !important;bottom:12px !important}
   #randomBtn{left:8px !important;bottom:58px !important}
-  #wishBtn{left:50% !important;transform:translateX(-50%) !important;bottom:58px !important}
+  #wishBtn{left:50% !important;transform:translateX(-50%) !important;bottom:58px !important;display:block !important}
   #musicBtn{right:8px !important;bottom:58px !important}
   #aboutBtn{display:none !important}
 
@@ -585,100 +585,174 @@ function secretMessage(text){
   setTimeout(()=>d.remove(),4200);
 }
 
-/* Ambient sound: generated locally with Web Audio API — no copyrighted audio file. */
+
+/* Ambient sound: generated locally with Web Audio API — no external/copyrighted track. */
 let ambientCtx=null, ambientGain=null, ambientTimer=null;
 function startAmbient(){
-  if(ambientCtx)return;
+  if(ambientCtx){
+    if(ambientCtx.state==="suspended") ambientCtx.resume().catch(()=>{});
+    return;
+  }
   try{
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
-    ambientCtx=new AC(); ambientGain=ambientCtx.createGain();
-    ambientGain.gain.value=.035; ambientGain.connect(ambientCtx.destination);
-    const master=ambientGain;
+    ambientCtx=new AC();
+    ambientGain=ambientCtx.createGain();
+    ambientGain.gain.value=.025;
+    ambientGain.connect(ambientCtx.destination);
     const notes=[196,220,261.63,293.66,329.63,392];
     let step=0;
-    function chime(){
+    const chime=()=>{
       if(!ambientCtx)return;
       const osc=ambientCtx.createOscillator(), g=ambientCtx.createGain();
-      osc.type="sine"; osc.frequency.value=notes[step++%notes.length];
-      g.gain.setValueAtTime(0,ambientCtx.currentTime);
-      g.gain.linearRampToValueAtTime(.12,ambientCtx.currentTime+.8);
-      g.gain.exponentialRampToValueAtTime(.001,ambientCtx.currentTime+5.5);
-      osc.connect(g);g.connect(master);osc.start();osc.stop(ambientCtx.currentTime+5.6);
-    }
-    chime();ambientTimer=setInterval(chime,3600);
+      osc.type="sine";
+      osc.frequency.value=notes[step++%notes.length];
+      g.gain.setValueAtTime(.0001,ambientCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.09,ambientCtx.currentTime+.8);
+      g.gain.exponentialRampToValueAtTime(.0001,ambientCtx.currentTime+4.5);
+      osc.connect(g);g.connect(ambientGain);
+      osc.start();osc.stop(ambientCtx.currentTime+4.6);
+    };
+    chime();
+    ambientTimer=setInterval(chime,3600);
   }catch(e){}
 }
 
 let wishes=[];
-const WISH_KEY="lucciole_nonna_teresa_wishes_v1";
+const WISH_KEY="lucciole_nonna_teresa_wishes_v2";
+
 function loadWishes(){
-  try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");}
-  catch(e){wishes=[]}
-  $("wishCount").textContent=wishes.length;
+  try{
+    const raw=localStorage.getItem(WISH_KEY);
+    wishes=raw?JSON.parse(raw):[];
+    if(!Array.isArray(wishes))wishes=[];
+  }catch(e){wishes=[]}
+  const count=$("wishCount");
+  if(count)count.textContent=wishes.length;
 }
+
 function saveWishes(){
   try{localStorage.setItem(WISH_KEY,JSON.stringify(wishes));}catch(e){}
-  $("wishCount").textContent=wishes.length;
+  const count=$("wishCount");
+  if(count)count.textContent=wishes.length;
 }
-function createWishStar(wish,initial=false){
+
+function createWishStar(wish){
+  const stars=$("wishStars");
+  if(!stars)return;
   const star=document.createElement("div");
   star.className="wishStar";
   star.dataset.wish=wish;
-  const x=rand(5,94), delay=initial?rand(0,4):rand(0,.5);
-  star.style.left=x+"%";
+  star.style.left=rand(6,94)+"%";
   star.style.top="-30px";
-  const duration=rand(4200,7600);
+
+  const duration=rand(4200,7200);
   const endX=rand(-12,12);
+  const endY=rand(80,112);
+
   star.animate(
-    [{transform:"translate(0,0) rotate(-25deg)",opacity:0},
-     {transform:`translate(${endX}vw,${rand(28,58)}vh) rotate(-25deg)`,opacity:1,offset:.28},
-     {transform:`translate(${endX*1.7}vw,110vh) rotate(-25deg)`,opacity:.15}],
-    {duration,delay,easing:"linear",fill:"forwards"}
+    [
+      {transform:"translate(0,0) rotate(-25deg)",opacity:0},
+      {transform:`translate(${endX/2}vw,${endY/2}vh) rotate(-25deg)`,opacity:1,offset:.25},
+      {transform:`translate(${endX}vw,${endY}vh) rotate(-25deg)`,opacity:.12}
+    ],
+    {duration,easing:"linear",fill:"forwards"}
   );
-  star.onclick=(ev)=>{
-    ev.stopPropagation();
-    showWishReveal(wish,star);
-  };
-  $("wishStars").appendChild(star);
-  setTimeout(()=>{if(star.isConnected)star.remove()},duration+delay+300);
+
+  const take=()=>showWishReveal(wish,star);
+  star.addEventListener("pointerdown",e=>{e.preventDefault();take()});
+  star.addEventListener("click",take);
+
+  stars.appendChild(star);
+  setTimeout(()=>{if(star.isConnected)star.remove()},duration+100);
 }
+
 function showWishReveal(wish,star){
-  const r=star.getBoundingClientRect();
-  const flash=document.createElement("div");flash.className="wishFlash";
-  flash.style.left=r.left+r.width/2+"px";flash.style.top=r.top+r.height/2+"px";
-  document.body.appendChild(flash);setTimeout(()=>flash.remove(),700);
-  const layer=document.createElement("div");layer.className="wishReveal";
-  layer.innerHTML=`<div class="card">
-    <div class="wishStarIcon">🌠</div>
-    <div class="eyebrow">Un augurio per Nonna Teresa</div>
-    <h2>Hai preso una stella.</h2>
-    <blockquote>“${escapeHtml(wish)}”</blockquote>
-    <button class="secondary">Lascia brillare il desiderio ✨</button>
-  </div>`;
+  if(star && star.isConnected){
+    const r=star.getBoundingClientRect();
+    const flash=document.createElement("div");
+    flash.className="wishFlash";
+    flash.style.left=(r.left+r.width/2)+"px";
+    flash.style.top=(r.top+r.height/2)+"px";
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),700);
+    star.remove();
+  }
+
+  const room=$("wishRoom");
+  if(!room)return;
+
+  const old=room.querySelector(".wishReveal");
+  if(old)old.remove();
+
+  const layer=document.createElement("div");
+  layer.className="wishReveal";
+  layer.innerHTML=`
+    <div class="card">
+      <div class="wishStarIcon">🌠</div>
+      <div class="eyebrow">Un augurio per Nonna Teresa</div>
+      <h2>Hai preso una stella.</h2>
+      <blockquote>“${escapeHtml(wish)}”</blockquote>
+      <button class="secondary">Lascia brillare il desiderio ✨</button>
+    </div>`;
   layer.querySelector("button").onclick=()=>layer.remove();
-  $("wishRoom").appendChild(layer);
-  star.remove();
+  room.appendChild(layer);
 }
+
+let wishShower=null;
+
 function openWishRoom(){
+  const room=$("wishRoom");
+  if(!room){
+    toast("La stanza dei desideri non è disponibile.");
+    return;
+  }
+
   startAmbient();
   loadWishes();
-  $("wishRoom").classList.remove("hidden");
-  $("wishRoomText").focus();
-  // Keep a gentle, continuous shower; every stored wish is represented by repeated stars.
-  if(!window.wishShower){
-    window.wishShower=setInterval(()=>{
-      if(!$("wishRoom").classList.contains("hidden") && wishes.length){
+  room.classList.remove("hidden");
+
+  const input=$("wishRoomText");
+  if(input)setTimeout(()=>input.focus(),150);
+
+  // If there are existing wishes, show one star for each when opening.
+  const stars=$("wishStars");
+  if(stars){
+    stars.innerHTML="";
+    if(wishes.length){
+      wishes.forEach(w=>createWishStar(w));
+    }
+  }
+
+  // New stars keep appearing, but only while the room is open.
+  if(!wishShower){
+    wishShower=setInterval(()=>{
+      if(!room.classList.contains("hidden") && wishes.length){
         const w=wishes[Math.floor(Math.random()*wishes.length)];
         createWishStar(w);
       }
-    },1250);
+    },1300);
   }
 }
+
+function closeWishRoom(){
+  const room=$("wishRoom");
+  if(room)room.classList.add("hidden");
+}
+
 function addWish(){
-  const input=$("wishRoomText"), text=input.value.trim();
-  if(!text){toast("Scrivi prima un desiderio per Nonna Teresa ✨");return}
-  wishes.push(text);saveWishes();input.value="";
+  const input=$("wishRoomText");
+  if(!input)return;
+  const text=input.value.trim();
+  if(!text){
+    toast("Scrivi prima un desiderio per Nonna Teresa ✨");
+    input.focus();
+    return;
+  }
+
+  wishes.push(text);
+  saveWishes();
+  input.value="";
   createWishStar(text);
   toast("🌠 Il desiderio è diventato una stella.");
 }
@@ -776,13 +850,8 @@ document.querySelectorAll(".butterfly").forEach((b,i)=>{
 });
 
 
-$("addWishStar").onclick=addWish;
-$("closeWishRoom").onclick=()=>{
   $("wishRoom").classList.add("hidden");
 };
-$("wishRoomText").addEventListener("keydown",e=>{
-  if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){e.preventDefault();addWish();}
-});
 
 $("saveGift").onclick=()=>{
  const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
@@ -791,7 +860,27 @@ $("saveGift").onclick=()=>{
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
 };
 // Final initialization: all constants/functions now exist before we read wishes.
-loadWishes();
+
+
+// Explicit wish-room wiring (after all functions are defined).
+document.addEventListener("DOMContentLoaded",()=>{
+  const wb=$("wishBtn");
+  const add=$("addWishStar");
+  const close=$("closeWishRoom");
+  const input=$("wishRoomText");
+
+  if(wb)wb.addEventListener("click",openWishRoom);
+  if(add)add.addEventListener("click",addWish);
+  if(close)close.addEventListener("click",closeWishRoom);
+  loadWishes();
+  if(input)input.addEventListener("keydown",e=>{
+    if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
+      e.preventDefault();
+      addWish();
+    }
+  });
+  loadWishes();
+});
 </script>
 </body>
 </html>
