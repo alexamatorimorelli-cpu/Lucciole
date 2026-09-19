@@ -304,7 +304,7 @@ textarea{min-height:110px;resize:vertical}
   border:1px solid #ffffff20;background:#071225aa;color:#fff1a4;font-size:13px;
 }
 #wishStars{position:absolute;inset:0;z-index:3;overflow:hidden}
-.wishStar{
+.wishStar{touch-action:manipulation;
   position:absolute;width:12px;height:12px;border-radius:50%;
   background:#fff7bc;box-shadow:0 0 10px 4px #fff5a0,0 0 34px 10px #fff5a033;
   cursor:pointer;touch-action:none;
@@ -366,7 +366,7 @@ textarea{min-height:110px;resize:vertical}
 </style>
 
 <style>
-.wishStar{
+.wishStar{touch-action:manipulation;
  position:absolute;width:14px;height:14px;border-radius:50%;
  background:#fffbe0;box-shadow:0 0 10px 4px #fff7bd,0 0 30px 11px #fff2a044;
  cursor:pointer;touch-action:none;z-index:4;
@@ -559,9 +559,17 @@ function pointOutsideJar(){
  return Math.random()<.5?{x:rand(2,17),y:rand(13,87)}:{x:rand(83,98),y:rand(13,87)}
 }
 function makeFirefly(memoryIndex=null){
- const f=document.createElement("div");f.className="firefly";f.dataset.memory=memoryIndex===null?"":memoryIndex;f.dataset.id=fireflyId++;
- const p=pointOutsideJar();f.style.left=p.x+"vw";f.style.top=p.y+"vh";f.dataset.baseX=p.x;f.dataset.baseY=p.y;
- f.addEventListener("pointerdown",startDrag);world.appendChild(f);wander(f,rand(0,20),rand(.55,1.2));
+ const f=document.createElement("div");
+ f.className="firefly";
+ f.dataset.memory=memoryIndex===null?"":memoryIndex;
+ f.dataset.id=fireflyId++;
+ const p=pointOutsideJar();
+ f.style.left=p.x+"vw";f.style.top=p.y+"vh";
+ f.dataset.baseX=p.x;f.dataset.baseY=p.y;
+ f.addEventListener("pointerdown",startDrag);
+ f.addEventListener("click",()=>{ if(!f.dataset.wasDragged) openAdoption(f); });
+ world.appendChild(f);
+ wander(f,rand(0,20),rand(.55,1.2));
 }
 function wander(f,t,s){
  function loop(){
@@ -578,19 +586,47 @@ function wander(f,t,s){
 }
 function startDrag(e){
  e.preventDefault();
- if(e.pointerId!=null && active?.setPointerCapture){try{e.currentTarget.setPointerCapture(e.pointerId)}catch(err){}}
- active=e.currentTarget;active.dataset.dragging="1";active.classList.add("dragging");
- const r=active.getBoundingClientRect();offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
+ const f=e.currentTarget;
+ active=f;
+ active.dataset.dragging="1";
+ active.dataset.wasDragged="0";
+ active.classList.add("dragging");
+ if(e.pointerId!=null && active.setPointerCapture){
+   try{active.setPointerCapture(e.pointerId)}catch(err){}
+ }
+ const r=active.getBoundingClientRect();
+ offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
  document.addEventListener("pointermove",drag,{passive:false});
  document.addEventListener("pointerup",endDrag,{once:true});
- document.addEventListener("pointercancel",endDrag,{once:true})
+ document.addEventListener("pointercancel",endDrag,{once:true});
 }
-function drag(e){if(!active)return;e.preventDefault();active.style.left=(e.clientX-offsetX)+"px";active.style.top=(e.clientY-offsetY)+"px";active.style.transform="scale(1.6)"}
+function drag(e){
+ if(!active)return;
+ e.preventDefault();
+ active.dataset.wasDragged="1";
+ active.style.left=(e.clientX-offsetX)+"px";
+ active.style.top=(e.clientY-offsetY)+"px";
+ active.style.transform="scale(1.6)";
+}
 function endDrag(){
- if(!active)return;document.removeEventListener("pointermove",drag);
- const r=jar.getBoundingClientRect(),f=active.getBoundingClientRect(),cx=f.left+f.width/2,cy=f.top+f.height/2;
- if(cx>r.left&&cx<r.right&&cy>r.top&&cy<r.bottom){const captured=active;active=null;openAdoption(captured)}
- else{active.dataset.dragging="0";active.classList.remove("dragging");active.style.transform="";const p=pointOutsideJar();active.style.left=p.x+"vw";active.style.top=p.y+"vh";active.dataset.baseX=p.x;active.dataset.baseY=p.y;active=null}
+ if(!active)return;
+ const f=active;
+ document.removeEventListener("pointermove",drag);
+ const r=jar.getBoundingClientRect(),fr=f.getBoundingClientRect();
+ const cx=fr.left+fr.width/2,cy=fr.top+fr.height/2;
+ if(cx>=r.left-10&&cx<=r.right+10&&cy>=r.top-10&&cy<=r.bottom+10){
+   active=null;
+   openAdoption(f);
+ }else{
+   f.dataset.dragging="0";
+   f.classList.remove("dragging");
+   f.style.transform="";
+   const p=pointOutsideJar();
+   f.style.left=p.x+"vw";f.style.top=p.y+"vh";
+   f.dataset.baseX=p.x;f.dataset.baseY=p.y;
+   active=null;
+   setTimeout(()=>{if(f.isConnected)delete f.dataset.wasDragged},50);
+ }
 }
 function openAdoption(f){
  // Remove the free firefly only after it has actually entered the jar.
@@ -616,6 +652,7 @@ async function createAdoptedMemory(){
   $("memoryAuthor").value="";$("memoryText").value="";$("memoryPhoto").value="";
   $("photoPreview").style.display="none";
   await loadSharedMemories();
+  makeFirefly(null);
   toast("✨ La lucciola è stata adottata per tutti.");
  }catch(e){console.error(e);toast("Non sono riuscito a salvare la lucciola.");}
  finally{$("adoptSave").disabled=false;}
@@ -650,7 +687,7 @@ function secretMessage(text){
 
 
 /* Audio rilassante generato localmente: nessun file esterno/copyright. */
-let ambientCtx=null,ambientMaster=null,ambientTimer=null;
+let ambientCtx=null,ambientMaster=null,ambientTimer=null,ambientEnabled=true;
 async function startAmbient(){
  try{
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
@@ -672,6 +709,14 @@ async function startAmbient(){
   if(ambientCtx.state==="suspended")await ambientCtx.resume();
  }catch(e){console.warn("Audio non disponibile",e);}
 }
+async function toggleAmbient(){
+  ambientEnabled=!ambientEnabled;
+  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.075:0,ambientCtx.currentTime,.08);
+  const b=$("soundToggle");
+  if(b)b.textContent=ambientEnabled?"🔊 Suono rilassante: ON":"🔇 Suono rilassante: OFF";
+  if(ambientEnabled) await startAmbient();
+}
+
 
 
 let wishes=[];
@@ -696,7 +741,7 @@ function createWishStar(wish){
   if(!stars)return;
   const star=document.createElement("div");
   star.className="wishStar";
-  star.dataset.wish=wish;
+  star.dataset.wishId=wish.id||"";
   star.style.left=rand(6,94)+"%";
   star.style.top="-30px";
 
@@ -713,7 +758,7 @@ function createWishStar(wish){
     {duration,easing:"linear",fill:"forwards"}
   );
 
-  const take=()=>showWishReveal(wish,star);
+  const take=()=>showWishReveal(wish.text||wish,star);
   star.addEventListener("pointerdown",e=>{e.preventDefault();take()});
   star.addEventListener("click",take);
 
@@ -755,56 +800,57 @@ function showWishReveal(wish,star){
 
 let wishShower=null;
 
-function openWishRoom(){
-  const room=$("wishRoom");
-  if(!room){
-    toast("La stanza dei desideri non è disponibile.");
-    return;
-  }
+async function openWishRoom(){
+ const room=$("wishRoom");
+ if(!room){toast("La stanza dei desideri non è disponibile.");return;}
+ room.classList.remove("hidden");
+ await startAmbient();
+ await loadWishes();
 
-  startAmbient();
-  loadWishes();
-  room.classList.remove("hidden");
+ const input=$("wishRoomText");
+ if(input)setTimeout(()=>input.focus(),150);
 
-  const input=$("wishRoomText");
-  if(input)setTimeout(()=>input.focus(),150);
+ const stars=$("wishStars");
+ if(stars){
+   stars.innerHTML="";
+   wishes.forEach(w=>createWishStar(w));
+ }
 
-  // If there are existing wishes, show one star for each when opening.
-  const stars=$("wishStars");
-  if(stars){
-    stars.innerHTML="";
-    if(wishes.length){
-      wishes.forEach(w=>createWishStar(w));
-    }
-  }
-
-  // New stars keep appearing, but only while the room is open.
-  if(!wishShower){
-    wishShower=setInterval(()=>{
-      if(!room.classList.contains("hidden") && wishes.length){
-        const w=wishes[Math.floor(Math.random()*wishes.length)];
-        createWishStar(w);
-      }
-    },1300);
-  }
+ if(!wishShower){
+   wishShower=setInterval(()=>{
+     if(!room.classList.contains("hidden") && wishes.length){
+       const w=wishes[Math.floor(Math.random()*wishes.length)];
+       createWishStar(w);
+     }
+   },1300);
+ }
 }
 
 function closeWishRoom(){
-  const room=$("wishRoom");
-  if(room)room.classList.add("hidden");
+ const room=$("wishRoom");
+ if(room)room.classList.add("hidden");
 }
 
 async function addWish(){
- const input=$("wishInput"),text=(input?.value||"").trim();
- if(!text){toast("Scrivi prima un desiderio ✨");return}
- if(supabaseClient){
-  const {error}=await supabaseClient.from("wishes").insert({text});
-  if(error){console.error(error);toast("Non sono riuscito a salvare il desiderio.");return;}
-  input.value="";await loadWishes();openWishRoom();toast("⭐ Il desiderio è entrato nella stanza delle stelle.");return;
- }
- wishes.push({id:crypto.randomUUID(),text});input.value="";await saveWishes();openWishRoom();
-}
+ const input=$("wishRoomText");
+ const text=(input?.value||"").trim();
+ if(!text){toast("Scrivi prima un desiderio ✨");return;}
 
+ if(supabaseClient){
+   const {error}=await supabaseClient.from("wishes").insert({text});
+   if(error){console.error(error);toast("Non sono riuscito a salvare il desiderio.");return;}
+   input.value="";
+   await loadWishes();
+   await openWishRoom();
+   toast("⭐ Il desiderio è entrato nella stanza delle stelle.");
+   return;
+ }
+
+ wishes.push({id:crypto.randomUUID(),text});
+ input.value="";
+ await saveWishes();
+ await openWishRoom();
+}
 function showFinal(){
  const layer=$("finalStars");layer.innerHTML="";
  for(let i=0;i<80;i++){
@@ -893,11 +939,21 @@ document.querySelectorAll(".butterfly").forEach((b,i)=>{
 });
 
 
-$("saveGift").onclick=()=>{
- const author=$("sender").value.trim()||"Una persona che ti vuole bene",text=$("giftText").value.trim(),file=$("photo").files[0];
+$("saveGift").onclick=async()=>{
+ const author=$("sender").value.trim()||"Una persona che ti vuole bene";
+ const text=$("giftText").value.trim();
+ const file=$("photo").files[0];
  if(!text&&!file){toast("Lascia almeno un piccolo ricordo 💛");return}
- const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
- if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
+ if(!requireShared())return;
+ const c=colors[memories.length%colors.length];
+ const quote=text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”";
+ const {error}=await insertSharedMemory({author,text,quote,color:c,imageFile:file});
+ if(error){console.error(error);toast("Non sono riuscito a salvare il ricordo.");return}
+ $("gift").classList.add("hidden");
+ $("sender").value="";$("giftText").value="";$("photo").value="";
+ await loadSharedMemories();
+ makeFirefly(null);
+ toast("✨ La tua lucciola è stata affidata al barattolo.");
 };
 // Final initialization: all constants/functions now exist before we read wishes.
 
@@ -922,10 +978,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   loadWishes();
 });
 // Direct fallback for static GitHub Pages loading.
-const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom");
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle");
 if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
+if(_soundToggle)_soundToggle.onclick=toggleAmbient;
 </script>
 </body>
 </html>
