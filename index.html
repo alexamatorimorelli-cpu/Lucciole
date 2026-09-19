@@ -335,6 +335,20 @@ textarea{min-height:110px;resize:vertical}
   #wishRoom .wishComposer button{width:100%}
 }
 </style>
+
+<style>
+/* V14: interactive fireflies must receive touch/pointer events */
+.firefly{
+  pointer-events:auto !important;
+  touch-action:none;
+  cursor:grab;
+  z-index:45;
+}
+.firefly.dragging{
+  cursor:grabbing;
+  z-index:120;
+}
+</style>
 </head>
 <body><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
@@ -470,7 +484,6 @@ function saveState(){
  }
 }
 loadSaved();
-loadWishes();
 $("fireflyCount").textContent=collected;
 
 function rand(a,b){return Math.random()*(b-a)+a}
@@ -500,9 +513,13 @@ function wander(f,t,s){
  requestAnimationFrame(loop)
 }
 function startDrag(e){
- e.preventDefault();active=e.currentTarget;active.dataset.dragging="1";active.classList.add("dragging");
+ e.preventDefault();
+ if(e.pointerId!=null && active?.setPointerCapture){try{e.currentTarget.setPointerCapture(e.pointerId)}catch(err){}}
+ active=e.currentTarget;active.dataset.dragging="1";active.classList.add("dragging");
  const r=active.getBoundingClientRect();offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
- document.addEventListener("pointermove",drag,{passive:false});document.addEventListener("pointerup",endDrag,{once:true})
+ document.addEventListener("pointermove",drag,{passive:false});
+ document.addEventListener("pointerup",endDrag,{once:true});
+ document.addEventListener("pointercancel",endDrag,{once:true})
 }
 function drag(e){if(!active)return;e.preventDefault();active.style.left=(e.clientX-offsetX)+"px";active.style.top=(e.clientY-offsetY)+"px";active.style.transform="scale(1.6)"}
 function endDrag(){
@@ -724,6 +741,7 @@ function restoreSavedJar(){
  if(collected>=10)jar.classList.add("luminous");
 }
 function beginWorld(){
+ startAmbient();
  $("start").classList.add("hidden");
  restoreSavedJar();
  for(let i=0;i<12;i++)makeFirefly(null);
@@ -772,6 +790,8 @@ $("saveGift").onclick=()=>{
  const save=image=>{const idx=memories.length,c=colors[idx%colors.length];memories.push({title:"Un ricordo per Nonna Teresa",text:text||"Una fotografia senza parole.",quote:text?("“"+text.slice(0,140)+(text.length>140?"…":"")+"”"):"“Alcuni ricordi non hanno bisogno di parole.”",color:c,image,author,user:true,adopted:false});saveState();$("gift").classList.add("hidden");$("sender").value="";$("giftText").value="";$("photo").value="";toast("✨ La tua lucciola è pronta.");makeFirefly(idx)};
  if(file){const reader=new FileReader();reader.onload=()=>save(reader.result);reader.readAsDataURL(file)}else save("")
 };
+// Final initialization: all constants/functions now exist before we read wishes.
+loadWishes();
 </script>
 </body>
 </html>
