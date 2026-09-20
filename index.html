@@ -60,6 +60,7 @@ button.secondary{background:#14243e;color:#edf3ff;border:1px solid #ffffff1c}
 @keyframes jarFlash{0%{opacity:.25;transform:scale(.9)}100%{opacity:0;transform:scale(1.05)}}
 
 .overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:22px;background:#010611dd;backdrop-filter:blur(9px)}
+#memory{z-index:230}
 .card{width:min(660px,94vw);max-height:92vh;overflow:auto;text-align:center;padding:32px 25px;border:1px solid #ffe88b33;border-radius:28px;background:linear-gradient(145deg,#0e1c32ee,#071123ee);box-shadow:0 25px 90px #0008}
 .card h1{font-weight:normal;font-size:clamp(32px,7vw,60px);line-height:1.05;margin:7px 0 16px;color:#fff3ad}
 .card h2{font-weight:normal;color:#fff0a8;font-size:29px;margin:12px 0}
@@ -151,7 +152,7 @@ textarea{min-height:110px;resize:vertical}
 #bookIntro{font-size:13px;color:#aebbd0;margin-top:-4px}
 .memoryItem{transition:.25s}
 .memoryItem:hover{transform:translateY(-3px);box-shadow:0 10px 30px #0004}
-.memoryItem:after{content:"Tocca per aprire il ricordo ✨";display:block;margin-top:9px;font-size:11px;color:#9fb0c8;opacity:.8}.wishListOverlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:22px;background:#020611b8;backdrop-filter:blur(7px)}.wishListOverlay.hidden{display:none}.wishListCard{width:min(650px,92vw);max-height:min(76vh,720px);display:flex;flex-direction:column}.wishListItems{overflow:auto;margin:14px 0 18px;padding-right:5px;display:grid;gap:10px}.wishListItem{padding:14px 16px;border-radius:16px;background:#0d1b31;border:1px solid #ffffff12;color:#edf2fb;line-height:1.5}.wishListItem .wishNum{display:block;color:#ffd98a;font-size:12px;margin-bottom:4px}.wishListEmpty{padding:22px;text-align:center;color:#aebbd0}.wishListClose{flex:0 0 auto}.wishListBtn{margin-top:10px} 
+.memoryItem:after{content:"Tocca per aprire il ricordo ✨";display:block;margin-top:9px;font-size:11px;color:#9fb0c8;opacity:.8}.wishListOverlay{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;padding:22px;background:#020611b8;backdrop-filter:blur(7px)}.wishListOverlay.hidden{display:none}.wishListCard{width:min(650px,92vw);max-height:min(76vh,720px);display:flex;flex-direction:column}.wishListItems{overflow:auto;margin:14px 0 18px;padding-right:5px;display:grid;gap:10px}.wishListItem{padding:14px 16px;border-radius:16px;background:#0d1b31;border:1px solid #ffffff12;color:#edf2fb;line-height:1.5}.wishListItem .wishNum{display:block;color:#ffd98a;font-size:12px;margin-bottom:4px}.wishListEmpty{padding:22px;text-align:center;color:#aebbd0}.wishListClose{flex:0 0 auto}.wishListBtn{margin-top:10px} 
 .finalStars{
   position:absolute;inset:0;pointer-events:none;overflow:hidden;
 }
@@ -1009,7 +1010,7 @@ function renderArchive(){
  const adopted=getAdoptedIndexes();
  if(!adopted.length){g.innerHTML="<p>Nessuna lucciola è ancora stata adottata.<br>Il libro aspetta la sua prima storia. ✨</p>";return}
  const seen=new Set();
- adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.innerHTML=`<strong>✨ ${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);g.appendChild(el)})
+ adopted.forEach(i=>{if(seen.has(i)||!memories[i])return;seen.add(i);const m=memories[i],el=document.createElement("div");el.className="memoryItem";el.tabIndex=0;el.setAttribute("role","button");el.innerHTML=`<strong>✨ ${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</strong><p>${escapeHtml(m.quote||m.text)}</p>`;el.onclick=()=>showMemory(i);el.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();showMemory(i)}};g.appendChild(el)})
 }
 function restoreSavedJar(){
  jar.querySelectorAll(".injar").forEach(d=>d.remove());
