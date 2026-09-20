@@ -441,16 +441,11 @@ body.night-50 #world{background:radial-gradient(ellipse at 50% 58%,#355572 0,#17
 body.night-50 #world .stars{opacity:.66}
 body.night-70 #world{background:radial-gradient(ellipse at 50% 58%,#3b5d79 0,#1b3450 34%,#09182b 68%,#01040b 100%)}
 body.night-70 #world .stars{opacity:.74}
-#secretCat,#secretLantern{position:absolute;z-index:7;cursor:pointer;opacity:.48;filter:drop-shadow(0 0 8px rgba(255,220,150,.28));transition:opacity .3s,transform .3s}
-#secretCat{left:27%;bottom:14%;font-size:19px}
-#secretLantern{right:27%;bottom:17%;font-size:18px}
-#secretCat:hover,#secretLantern:hover,#secretMoon:hover,.butterfly:hover{opacity:.9;transform:scale(1.12)}
-#secretCount{position:fixed;left:14px;top:16px;z-index:31;padding:6px 10px;border-radius:999px;background:#08142699;border:1px solid #ffffff12;color:#cfd9e8;font:11px Arial,sans-serif;opacity:.0;transition:opacity .4s}
-#secretCount.revealed{opacity:.9}
+#secretMoon:hover,.butterfly:hover{opacity:.9;transform:scale(1.12)}
 </style>
 </head>
 <body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
-<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
+<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
 <div id="counter">✨ <b id="count">0</b> lucciole nel barattolo</div>
 <div id="progress80">Ogni luce è un ricordo in più.</div>
 <div id="jar"><div id="jarGlow"></div></div>
@@ -839,6 +834,12 @@ function secretMessage(text){
   const d=document.createElement("div");d.className="secretMessage";d.textContent=text;document.body.appendChild(d);
   setTimeout(()=>d.remove(),4200);
 }
+
+// I tre piccoli segreti preferiti: luna e due farfalle. Nessuna candela o gatto.
+$("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
+document.querySelectorAll(".butterfly").forEach((b,i)=>{
+  b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
+});
 
 
 /* Audio ambientale generato localmente: morbido, lento e non melodico/ripetitivo. */
