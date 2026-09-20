@@ -356,6 +356,15 @@ textarea{min-height:110px;resize:vertical}
   #wishRoom .wishComposer button{width:100%}
 }
 
+#memoryReader{position:fixed;inset:0;z-index:235;display:grid;place-items:center;background:#020716c7;backdrop-filter:blur(8px);padding:22px;box-sizing:border-box}
+#memoryReader.hidden{display:none}
+#memoryReader .card{width:min(680px,92vw);max-height:88vh;overflow:auto}
+#memoryReaderContent img{display:block;width:100%;max-height:390px;object-fit:cover;border-radius:18px;margin:0 auto 18px;box-shadow:0 12px 35px #0007}
+#memoryReaderContent h2{margin:8px 0 10px}
+#memoryReaderContent p{font-size:17px;line-height:1.6}
+.memoryReaderNav{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+#memoryReaderCounter{font-size:12px;color:#aebbd0;min-width:90px;text-align:center}
+#memoryReader .readerAuthor{color:#c7d2e4;margin-top:8px}
 #wishReader{position:absolute;inset:0;z-index:25;display:grid;place-items:center;background:#020716b8;backdrop-filter:blur(7px)}
 #wishReader .card{width:min(620px,91vw)}
 #wishReaderText{font-size:22px;line-height:1.65;color:#fff3b0;margin:22px 0;min-height:120px;display:grid;place-items:center}
@@ -420,7 +429,7 @@ textarea{min-height:110px;resize:vertical}
   100%{transform:translate(var(--tx),var(--ty)) scale(1.4);opacity:.95}
 }
 
-/* V30: living night + five hidden secrets */
+/* V31: living night */
 #world{transition:background 2.5s ease, filter 2.5s ease}
 #world .stars{transition:opacity 2.5s ease, transform 12s linear}
 #world .hill,#world .hill2,#world .grass{transition:filter 2.5s ease, opacity 2.5s ease}
@@ -441,7 +450,7 @@ body.night-70 #world .stars{opacity:.74}
 </style>
 </head>
 <body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
-<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div id="secretCat" title="🐈">🐈</div><div id="secretLantern" title="🕯️">🕯️</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
+<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
 <div id="counter">✨ <b id="count">0</b> lucciole nel barattolo</div>
 <div id="progress80">Ogni luce è un ricordo in più.</div>
 <div id="jar"><div id="jarGlow"></div></div>
@@ -451,7 +460,7 @@ body.night-70 #world .stars{opacity:.74}
 <button id="randomBtn">🎁 Sorpresa</button>
 <button id="wishBtn">🌠 Esprimi un desiderio</button>
 <button id="aboutBtn">💛 Per Nonna Teresa</button>
-<div id="toast"></div><div id="secretCount">Segreti scoperti: <span id="secretFound">0</span>/5</div>
+<div id="toast"></div>
 
 <div id="start" class="overlay"><div class="card">
 <div style="font-size:58px">✨</div><div class="eyebrow">Un piccolo regalo per Nonna Teresa</div>
@@ -491,8 +500,20 @@ body.night-70 #world .stars{opacity:.74}
 <div id="archive" class="overlay hidden"><div class="card">
 <div class="eyebrow">Il libro dei ricordi</div><h2>Tutti i ricordi raccolti</h2>
 <p id="bookIntro">Ottant'anni, tanti momenti, una vita piena di storie.</p>
-<div id="grid" class="grid"></div><button id="closeArchive" class="secondary">Torna al cielo 🌙</button>
+<div id="grid" class="grid"></div><button id="readMemoriesBtn" class="secondary" style="margin-top:10px">💌 Leggi uno alla volta</button><button id="closeArchive" class="secondary">Torna al cielo 🌙</button>
 </div></div>
+
+<div id="memoryReader" class="hidden" aria-hidden="true">
+  <div class="card">
+    <div id="memoryReaderContent"></div>
+    <div class="memoryReaderNav">
+      <button id="memoryPrev" class="secondary">← Precedente</button>
+      <span id="memoryReaderCounter">1 / 1</span>
+      <button id="memoryNext" class="secondary">Successivo →</button>
+    </div>
+    <button id="closeMemoryReader" class="secondary" style="margin-top:10px">Torna ai ricordi 📖</button>
+  </div>
+</div>
 
 <div id="gift" class="overlay hidden"><div class="card">
 <div style="font-size:42px">✨</div><div class="eyebrow">Per il compleanno di Nonna Teresa</div><h2>Regala una lucciola</h2>
@@ -820,7 +841,7 @@ function secretMessage(text){
 }
 
 
-/* Audio rilassante generato localmente: nessun file esterno/copyright. */
+/* Audio ambientale generato localmente: morbido, lento e non melodico/ripetitivo. */
 let ambientCtx=null,ambientMaster=null,ambientTimer=null,ambientEnabled=true;
 async function startAmbient(){
  try{
@@ -828,29 +849,36 @@ async function startAmbient(){
   if(!ambientCtx){
    ambientCtx=new AC();
    ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.14;ambientMaster.connect(ambientCtx.destination);
-   [196,261.63,329.63].forEach((f,i)=>{
-    const o=ambientCtx.createOscillator(),g=ambientCtx.createGain();o.type="sine";o.frequency.value=f;g.gain.value=i?0.006:0.01;o.connect(g);g.connect(ambientMaster);o.start();
+   // Tre droni molto lenti, quasi impercettibili: niente progressioni ripetute.
+   [174.61,261.63,392].forEach((f,i)=>{
+    const o=ambientCtx.createOscillator(),g=ambientCtx.createGain(),filter=ambientCtx.createBiquadFilter();
+    o.type='sine';o.frequency.value=f;filter.type='lowpass';filter.frequency.value=850;
+    g.gain.value=[.010,.006,.004][i];o.connect(filter);filter.connect(g);g.connect(ambientMaster);o.start();
    });
-   const notes=[261.63,293.66,329.63,392,329.63,293.66];let step=0;
    const chime=()=>{
-    const now=ambientCtx.currentTime,o=ambientCtx.createOscillator(),g=ambientCtx.createGain();
-    o.type="sine";o.frequency.value=notes[step++%notes.length];
-    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.15,now+.18);g.gain.exponentialRampToValueAtTime(.0001,now+3.2);
-    o.connect(g);g.connect(ambientMaster);o.start(now);o.stop(now+3.3);
+    if(!ambientCtx||!ambientEnabled)return;
+    const now=ambientCtx.currentTime;
+    const notes=[293.66,329.63,369.99,392,440,493.88,523.25,587.33,659.25];
+    const note=notes[Math.floor(Math.random()*notes.length)];
+    const o=ambientCtx.createOscillator(),g=ambientCtx.createGain(),filter=ambientCtx.createBiquadFilter();
+    o.type='sine';o.frequency.setValueAtTime(note,now);
+    filter.type='lowpass';filter.frequency.value=1300;
+    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.055,now+.35);g.gain.exponentialRampToValueAtTime(.0001,now+4.8);
+    o.connect(filter);filter.connect(g);g.connect(ambientMaster);o.start(now);o.stop(now+5);
    };
-   chime();ambientTimer=setInterval(chime,2600);
+   const scheduleChime=()=>{chime();ambientTimer=setTimeout(scheduleChime,6500+Math.random()*8500)};
+   ambientTimer=setTimeout(scheduleChime,5000+Math.random()*5000);
   }
-  if(ambientCtx.state==="suspended")await ambientCtx.resume();
- }catch(e){console.warn("Audio non disponibile",e);}
+  if(ambientCtx.state==='suspended')await ambientCtx.resume();
+ }catch(e){console.warn('Audio non disponibile',e);}
 }
 async function toggleAmbient(){
-  ambientEnabled=!ambientEnabled;
-  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.14:0,ambientCtx.currentTime,.08);
-  const b=$("soundToggle");
-  if(b)b.textContent=ambientEnabled?"🔊 Suono rilassante: ON":"🔇 Suono rilassante: OFF";
-  if(ambientEnabled) await startAmbient();
+ ambientEnabled=!ambientEnabled;
+ if(ambientMaster)ambientMaster.gain.setTargetAtTime(ambientEnabled?.14:0,ambientCtx.currentTime,.08);
+ const b=$('soundToggle');
+ if(b)b.textContent=ambientEnabled?'🔊 Suono rilassante: ON':'🔇 Suono rilassante: OFF';
+ if(ambientEnabled)await startAmbient();
 }
-
 
 
 let wishes=[];
@@ -1076,6 +1104,31 @@ async function deleteCurrentMemory(){
 }
 
 
+let memoryReaderIndex=0;
+function renderMemoryReader(){
+ const box=$('memoryReaderContent'),counter=$('memoryReaderCounter');
+ if(!box||!counter)return;
+ const list=getAdoptedIndexes();
+ if(!list.length){box.innerHTML='<div class="photoPlaceholder">✨</div><h2>Nessun ricordo ancora</h2><p>Il libro aspetta la sua prima storia.</p>';counter.textContent='0 / 0';return;}
+ if(memoryReaderIndex<0)memoryReaderIndex=list.length-1;
+ if(memoryReaderIndex>=list.length)memoryReaderIndex=0;
+ const i=list[memoryReaderIndex],m=memories[i];
+ const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
+ box.innerHTML=photo+`<div class="eyebrow">✨ Un ricordo per Nonna Teresa</div><h2>${escapeHtml(m.title||'Un ricordo per Nonna Teresa')}</h2><p>${escapeHtml(m.text||'')}</p>${m.quote?`<p class="quote">${escapeHtml(m.quote)}</p>`:''}${m.author?`<p class="readerAuthor">— ${escapeHtml(m.author)}</p>`:''}`;
+ counter.textContent=(memoryReaderIndex+1)+' / '+list.length;
+}
+function openMemoryReader(){
+ memoryReaderIndex=0;renderMemoryReader();
+ const r=$('memoryReader');if(r){r.classList.remove('hidden');r.setAttribute('aria-hidden','false');}
+}
+function closeMemoryReader(){
+ const r=$('memoryReader');if(r){r.classList.add('hidden');r.setAttribute('aria-hidden','true');}
+}
+function stepMemoryReader(delta){
+ const list=getAdoptedIndexes();if(!list.length)return;
+ memoryReaderIndex=(memoryReaderIndex+delta+list.length)%list.length;renderMemoryReader();
+}
+
 function renderArchive(){
  const g=$("grid");g.innerHTML="";
  const adopted=getAdoptedIndexes();
@@ -1128,23 +1181,6 @@ $("aboutBtn").onclick=()=>$("aboutTeresa").classList.remove("hidden");
 $("closeAbout").onclick=()=>$("aboutTeresa").classList.add("hidden");
 
 
-let secretsFound=new Set();
-function findSecret(id,text){
-  secretsFound.add(id);
-  const c=$("secretCount"),f=$("secretFound");
-  if(f)f.textContent=secretsFound.size;
-  if(c)c.classList.add("revealed");
-  secretMessage(text);
-}
-$("secretMoon").onclick=()=>findSecret("moon","🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
-document.querySelectorAll(".butterfly").forEach((b,i)=>{
-  b.style.cursor="pointer";
-  b.onclick=()=>findSecret("butterfly"+i,i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
-});
-$("secretCat").onclick=()=>findSecret("cat","🐈 Una piccola creatura si è nascosta nella notte. Anche lei voleva lasciare un augurio.");
-$("secretLantern").onclick=()=>findSecret("lantern","🕯️ Una luce per tutte le persone che hanno illuminato la vita di Nonna Teresa.");
-
-
 window.saveGiftMemory=async function(){
  const author=$("sender").value.trim()||"Una persona che ti vuole bene";
  const text=$("giftText").value.trim();
@@ -1191,6 +1227,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   const closeReader=$("closeWishReader");
   const prevWish=$("wishPrev");
   const nextWish=$("wishNext");
+  const readMemories=$("readMemoriesBtn");
+  const closeMemoryReaderBtn=$("closeMemoryReader");
+  const prevMemory=$("memoryPrev");
+  const nextMemory=$("memoryNext");
 
   if(wb)wb.addEventListener("click",openWishRoom);
   if(add)add.addEventListener("click",addWish);
@@ -1201,6 +1241,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(closeReader)closeReader.addEventListener("click",closeWishReader);
   if(prevWish)prevWish.addEventListener("click",()=>stepWishReader(-1));
   if(nextWish)nextWish.addEventListener("click",()=>stepWishReader(1));
+  if(readMemories)readMemories.addEventListener("click",openMemoryReader);
+  if(closeMemoryReaderBtn)closeMemoryReaderBtn.addEventListener("click",closeMemoryReader);
+  if(prevMemory)prevMemory.addEventListener("click",()=>stepMemoryReader(-1));
+  if(nextMemory)nextMemory.addEventListener("click",()=>stepMemoryReader(1));
   loadWishes();
   if(input)input.addEventListener("keydown",e=>{
     if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
@@ -1212,6 +1256,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 // Direct fallback for static GitHub Pages loading.
 const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle"), _wishListBtn=$("wishListBtn"), _closeWishList=$("closeWishList"), _readWishes=$("readWishesBtn"), _closeReader=$("closeWishReader"), _prevWish=$("wishPrev"), _nextWish=$("wishNext");
+const _readMemories=$("readMemoriesBtn"), _closeMemoryReader=$("closeMemoryReader"), _prevMemory=$("memoryPrev"), _nextMemory=$("memoryNext");
 if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
@@ -1222,6 +1267,10 @@ if(_readWishes)_readWishes.onclick=openWishReader;
 if(_closeReader)_closeReader.onclick=closeWishReader;
 if(_prevWish)_prevWish.onclick=()=>stepWishReader(-1);
 if(_nextWish)_nextWish.onclick=()=>stepWishReader(1);
+if(_readMemories)_readMemories.onclick=openMemoryReader;
+if(_closeMemoryReader)_closeMemoryReader.onclick=closeMemoryReader;
+if(_prevMemory)_prevMemory.onclick=()=>stepMemoryReader(-1);
+if(_nextMemory)_nextMemory.onclick=()=>stepMemoryReader(1);
 
 function maybeOfferRelease80(){
   const release=document.getElementById("release80");
