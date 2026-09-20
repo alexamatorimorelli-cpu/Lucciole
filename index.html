@@ -823,6 +823,9 @@ async function loadWishes(){
   const {data,error}=await supabaseClient.from("wishes").select("id,text,created_at").order("created_at",{ascending:true});
   if(error){console.error(error);return;}
   wishes=(data||[]).map(w=>({id:w.id,text:w.text}));
+  // Elimina eventuali duplicati accidentali, usando id e testo come chiave.
+  const seenWishes=new Set();
+  wishes=wishes.filter(w=>{const key=w.id||String(w.text||"").trim(); if(seenWishes.has(key)) return false; seenWishes.add(key); return true;});
  }else{
   try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");if(!Array.isArray(wishes))wishes=[];}catch(e){wishes=[]}
  }
@@ -836,9 +839,12 @@ async function saveWishes(){
 function createWishStar(wish){
   const stars=$("wishStars");
   if(!stars)return;
+  // Non mostrare contemporaneamente due stelle per lo stesso desiderio.
+  const wishKey=String(wish.id||wish.text||wish);
+  if([...stars.querySelectorAll(".wishStar")].some(s=>s.dataset.wishId===wishKey)) return;
   const star=document.createElement("div");
   star.className="wishStar";
-  star.dataset.wishId=wish.id||"";
+  star.dataset.wishId=wishKey;
   star.style.left=rand(6,94)+"%";
   star.style.top="-30px";
 
@@ -939,7 +945,8 @@ async function openWishRoom(){
  const stars=$("wishStars");
  if(stars){
    stars.innerHTML="";
-   wishes.forEach(w=>createWishStar(w));
+   const seenStarKeys=new Set();
+   wishes.forEach(w=>{const key=String(w.id||w.text||w); if(!seenStarKeys.has(key)){seenStarKeys.add(key);createWishStar(w);}});
  }
 
  if(!wishShower){
