@@ -790,7 +790,7 @@ async function startAmbient(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
   if(!ambientCtx){
    ambientCtx=new AC();
-   ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.075;ambientMaster.connect(ambientCtx.destination);
+   ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.11;ambientMaster.connect(ambientCtx.destination);
    [196,261.63,329.63].forEach((f,i)=>{
     const o=ambientCtx.createOscillator(),g=ambientCtx.createGain();o.type="sine";o.frequency.value=f;g.gain.value=i?0.006:0.01;o.connect(g);g.connect(ambientMaster);o.start();
    });
@@ -798,7 +798,7 @@ async function startAmbient(){
    const chime=()=>{
     const now=ambientCtx.currentTime,o=ambientCtx.createOscillator(),g=ambientCtx.createGain();
     o.type="sine";o.frequency.value=notes[step++%notes.length];
-    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.12,now+.18);g.gain.exponentialRampToValueAtTime(.0001,now+3.2);
+    g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.15,now+.18);g.gain.exponentialRampToValueAtTime(.0001,now+3.2);
     o.connect(g);g.connect(ambientMaster);o.start(now);o.stop(now+3.3);
    };
    chime();ambientTimer=setInterval(chime,2600);
@@ -808,7 +808,7 @@ async function startAmbient(){
 }
 async function toggleAmbient(){
   ambientEnabled=!ambientEnabled;
-  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.075:0,ambientCtx.currentTime,.08);
+  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.11:0,ambientCtx.currentTime,.08);
   const b=$("soundToggle");
   if(b)b.textContent=ambientEnabled?"🔊 Suono rilassante: ON":"🔇 Suono rilassante: OFF";
   if(ambientEnabled) await startAmbient();
@@ -823,11 +823,20 @@ async function loadWishes(){
   const {data,error}=await supabaseClient.from("wishes").select("id,text,created_at").order("created_at",{ascending:true});
   if(error){console.error(error);return;}
   wishes=(data||[]).map(w=>({id:w.id,text:w.text}));
-  // Elimina eventuali duplicati accidentali, usando id e testo come chiave.
+  // Elimina duplicati accidentali già presenti nel database: se lo stesso testo
+  // è stato salvato più volte, per Nonna Teresa deve comparire una sola volta.
   const seenWishes=new Set();
-  wishes=wishes.filter(w=>{const key=w.id||String(w.text||"").trim(); if(seenWishes.has(key)) return false; seenWishes.add(key); return true;});
+  wishes=wishes.filter(w=>{
+    const key=String(w.text||"").trim().replace(/\s+/g," ").toLowerCase();
+    if(!key || seenWishes.has(key)) return false;
+    seenWishes.add(key);
+    return true;
+  });
  }else{
-  try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");if(!Array.isArray(wishes))wishes=[];}catch(e){wishes=[]}
+  try{wishes=JSON.parse(localStorage.getItem(WISH_KEY)||"[]");if(!Array.isArray(wishes))wishes=[];
+   const seenWishes=new Set();
+   wishes=wishes.filter(w=>{const key=String(w.text||w||"").trim().replace(/\s+/g," ").toLowerCase();if(!key||seenWishes.has(key))return false;seenWishes.add(key);return true;});
+  }catch(e){wishes=[]}
  }
  const c=$("wishCount");if(c)c.textContent=wishes.length;
 }
@@ -946,7 +955,10 @@ async function openWishRoom(){
  if(stars){
    stars.innerHTML="";
    const seenStarKeys=new Set();
-   wishes.forEach(w=>{const key=String(w.id||w.text||w); if(!seenStarKeys.has(key)){seenStarKeys.add(key);createWishStar(w);}});
+   wishes.forEach(w=>{
+     const key=String(w.text||w).trim().replace(/\s+/g," ").toLowerCase();
+     if(!seenStarKeys.has(key)){seenStarKeys.add(key);createWishStar(w);}
+   });
  }
 
  if(!wishShower){
