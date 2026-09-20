@@ -355,6 +355,12 @@ textarea{min-height:110px;resize:vertical}
   #wishRoom .wishComposer textarea{width:100%;box-sizing:border-box;margin-bottom:7px}
   #wishRoom .wishComposer button{width:100%}
 }
+
+#wishReader{position:absolute;inset:0;z-index:25;display:grid;place-items:center;background:#020716b8;backdrop-filter:blur(7px)}
+#wishReader .card{width:min(620px,91vw)}
+#wishReaderText{font-size:22px;line-height:1.65;color:#fff3b0;margin:22px 0;min-height:120px;display:grid;place-items:center}
+.wishReaderNav{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
+#wishReaderCounter{font-size:12px;color:#aebbd0;min-width:90px}
 </style>
 
 <style>
@@ -413,10 +419,29 @@ textarea{min-height:110px;resize:vertical}
   12%{opacity:1}
   100%{transform:translate(var(--tx),var(--ty)) scale(1.4);opacity:.95}
 }
+
+/* V30: living night + five hidden secrets */
+#world{transition:background 2.5s ease, filter 2.5s ease}
+#world .stars{transition:opacity 2.5s ease, transform 12s linear}
+#world .hill,#world .hill2,#world .grass{transition:filter 2.5s ease, opacity 2.5s ease}
+body.night-10 #world{background:radial-gradient(ellipse at 50% 58%,#2b4562 0,#12243d 34%,#061020 68%,#01040b 100%)}
+body.night-10 #world .stars{opacity:.50}
+body.night-30 #world{background:radial-gradient(ellipse at 50% 58%,#304d6b 0,#142943 34%,#071222 68%,#01040b 100%)}
+body.night-30 #world .stars{opacity:.57}
+body.night-50 #world{background:radial-gradient(ellipse at 50% 58%,#355572 0,#172e49 34%,#081526 68%,#01040b 100%)}
+body.night-50 #world .stars{opacity:.66}
+body.night-70 #world{background:radial-gradient(ellipse at 50% 58%,#3b5d79 0,#1b3450 34%,#09182b 68%,#01040b 100%)}
+body.night-70 #world .stars{opacity:.74}
+#secretCat,#secretLantern{position:absolute;z-index:7;cursor:pointer;opacity:.48;filter:drop-shadow(0 0 8px rgba(255,220,150,.28));transition:opacity .3s,transform .3s}
+#secretCat{left:27%;bottom:14%;font-size:19px}
+#secretLantern{right:27%;bottom:17%;font-size:18px}
+#secretCat:hover,#secretLantern:hover,#secretMoon:hover,.butterfly:hover{opacity:.9;transform:scale(1.12)}
+#secretCount{position:fixed;left:14px;top:16px;z-index:31;padding:6px 10px;border-radius:999px;background:#08142699;border:1px solid #ffffff12;color:#cfd9e8;font:11px Arial,sans-serif;opacity:.0;transition:opacity .4s}
+#secretCount.revealed{opacity:.9}
 </style>
 </head>
 <body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
-<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
+<div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div id="secretCat" title="🐈">🐈</div><div id="secretLantern" title="🕯️">🕯️</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
 <div id="counter">✨ <b id="count">0</b> lucciole nel barattolo</div>
 <div id="progress80">Ogni luce è un ricordo in più.</div>
 <div id="jar"><div id="jarGlow"></div></div>
@@ -426,7 +451,7 @@ textarea{min-height:110px;resize:vertical}
 <button id="randomBtn">🎁 Sorpresa</button>
 <button id="wishBtn">🌠 Esprimi un desiderio</button>
 <button id="aboutBtn">💛 Per Nonna Teresa</button>
-<div id="toast"></div>
+<div id="toast"></div><div id="secretCount">Segreti scoperti: <span id="secretFound">0</span>/5</div>
 
 <div id="start" class="overlay"><div class="card">
 <div style="font-size:58px">✨</div><div class="eyebrow">Un piccolo regalo per Nonna Teresa</div>
@@ -450,6 +475,18 @@ textarea{min-height:110px;resize:vertical}
 </div></div>
 
 <div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button><button id="deleteMemory" class="secondary">🗑️ Cancella questo ricordo</button></div></div></div>
+<div id="wishReader" class="hidden" aria-hidden="true">
+  <div class="card">
+    <div class="eyebrow">💌 I desideri per Nonna Teresa</div>
+    <div id="wishReaderText">✨</div>
+    <div class="wishReaderNav">
+      <button id="wishPrev" class="secondary">← Precedente</button>
+      <span id="wishReaderCounter">1 / 1</span>
+      <button id="wishNext" class="secondary">Successivo →</button>
+    </div>
+    <button id="closeWishReader" class="secondary">Torna all'elenco 📜</button>
+  </div>
+</div>
 
 <div id="archive" class="overlay hidden"><div class="card">
 <div class="eyebrow">Il libro dei ricordi</div><h2>Tutti i ricordi raccolti</h2>
@@ -508,7 +545,7 @@ textarea{min-height:110px;resize:vertical}
     <h2>Tutti gli auguri per Nonna Teresa</h2>
     <p>Qui puoi leggerli con calma, uno dopo l'altro.</p>
     <div id="wishListItems" class="wishListItems"></div>
-    <button id="closeWishList" class="secondary wishListClose">Torna alle stelle 🌠</button>
+    <button id="readWishesBtn" class="secondary">💌 Leggi uno alla volta</button><button id="closeWishList" class="secondary wishListClose">Torna alle stelle 🌠</button>
   </div>
 </div>
 
@@ -790,7 +827,7 @@ async function startAmbient(){
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
   if(!ambientCtx){
    ambientCtx=new AC();
-   ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.11;ambientMaster.connect(ambientCtx.destination);
+   ambientMaster=ambientCtx.createGain();ambientMaster.gain.value=.14;ambientMaster.connect(ambientCtx.destination);
    [196,261.63,329.63].forEach((f,i)=>{
     const o=ambientCtx.createOscillator(),g=ambientCtx.createGain();o.type="sine";o.frequency.value=f;g.gain.value=i?0.006:0.01;o.connect(g);g.connect(ambientMaster);o.start();
    });
@@ -808,7 +845,7 @@ async function startAmbient(){
 }
 async function toggleAmbient(){
   ambientEnabled=!ambientEnabled;
-  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.11:0,ambientCtx.currentTime,.08);
+  if(ambientMaster) ambientMaster.gain.setTargetAtTime(ambientEnabled?.14:0,ambientCtx.currentTime,.08);
   const b=$("soundToggle");
   if(b)b.textContent=ambientEnabled?"🔊 Suono rilassante: ON":"🔇 Suono rilassante: OFF";
   if(ambientEnabled) await startAmbient();
@@ -849,7 +886,7 @@ function createWishStar(wish){
   const stars=$("wishStars");
   if(!stars)return;
   // Non mostrare contemporaneamente due stelle per lo stesso desiderio.
-  const wishKey=String(wish.id||wish.text||wish);
+  const wishKey=String(wish.text||wish).trim().replace(/\s+/g," ").toLowerCase();
   if([...stars.querySelectorAll(".wishStar")].some(s=>s.dataset.wishId===wishKey)) return;
   const star=document.createElement("div");
   star.className="wishStar";
@@ -910,7 +947,7 @@ function showWishReveal(wish,star){
   room.appendChild(layer);
 }
 
-let wishShower=null;
+let wishShownKeys=new Set();
 
 function renderWishList(){
   const box=$("wishListItems");
@@ -940,6 +977,29 @@ function closeWishList(){
   layer.classList.add("hidden");
   layer.setAttribute("aria-hidden","true");
 }
+let wishReaderIndex=0;
+function renderWishReader(){
+  const text=$("wishReaderText"), counter=$("wishReaderCounter");
+  if(!text||!counter)return;
+  if(!wishes.length){text.textContent="Non c'è ancora nessun desiderio. ✨";counter.textContent="0 / 0";return;}
+  const w=wishes[wishReaderIndex]||wishes[0];
+  text.textContent='“'+String(w.text||w).trim()+'”';
+  counter.textContent=(wishReaderIndex+1)+" / "+wishes.length;
+}
+function openWishReader(){
+  wishReaderIndex=0;
+  closeWishList();
+  renderWishReader();
+  const r=$("wishReader");if(r){r.classList.remove("hidden");r.setAttribute("aria-hidden","false");}
+}
+function closeWishReader(){
+  const r=$("wishReader");if(r){r.classList.add("hidden");r.setAttribute("aria-hidden","true");}
+}
+function stepWishReader(delta){
+  if(!wishes.length)return;
+  wishReaderIndex=(wishReaderIndex+delta+wishes.length)%wishes.length;
+  renderWishReader();
+}
 
 async function openWishRoom(){
  const room=$("wishRoom");
@@ -954,20 +1014,12 @@ async function openWishRoom(){
  const stars=$("wishStars");
  if(stars){
    stars.innerHTML="";
+   wishShownKeys=new Set();
    const seenStarKeys=new Set();
    wishes.forEach(w=>{
      const key=String(w.text||w).trim().replace(/\s+/g," ").toLowerCase();
-     if(!seenStarKeys.has(key)){seenStarKeys.add(key);createWishStar(w);}
+     if(!seenStarKeys.has(key)){seenStarKeys.add(key);wishShownKeys.add(key);createWishStar(w);}
    });
- }
-
- if(!wishShower){
-   wishShower=setInterval(()=>{
-     if(!room.classList.contains("hidden") && wishes.length){
-       const w=wishes[Math.floor(Math.random()*wishes.length)];
-       createWishStar(w);
-     }
-   },1300);
  }
 }
 
@@ -1076,11 +1128,21 @@ $("aboutBtn").onclick=()=>$("aboutTeresa").classList.remove("hidden");
 $("closeAbout").onclick=()=>$("aboutTeresa").classList.add("hidden");
 
 
-$("secretMoon").onclick=()=>secretMessage("🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
+let secretsFound=new Set();
+function findSecret(id,text){
+  secretsFound.add(id);
+  const c=$("secretCount"),f=$("secretFound");
+  if(f)f.textContent=secretsFound.size;
+  if(c)c.classList.add("revealed");
+  secretMessage(text);
+}
+$("secretMoon").onclick=()=>findSecret("moon","🌙 Anche le notti più buie custodiscono una piccola luce per Nonna Teresa.");
 document.querySelectorAll(".butterfly").forEach((b,i)=>{
   b.style.cursor="pointer";
-  b.onclick=()=>secretMessage(i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
+  b.onclick=()=>findSecret("butterfly"+i,i===0?"🦋 Alcuni ricordi arrivano piano, ma restano a lungo.":"🦋 Una piccola sorpresa per Nonna Teresa.");
 });
+$("secretCat").onclick=()=>findSecret("cat","🐈 Una piccola creatura si è nascosta nella notte. Anche lei voleva lasciare un augurio.");
+$("secretLantern").onclick=()=>findSecret("lantern","🕯️ Una luce per tutte le persone che hanno illuminato la vita di Nonna Teresa.");
 
 
 window.saveGiftMemory=async function(){
@@ -1125,12 +1187,20 @@ document.addEventListener("DOMContentLoaded",()=>{
   const input=$("wishRoomText");
   const listBtn=$("wishListBtn");
   const closeList=$("closeWishList");
+  const readWishes=$("readWishesBtn");
+  const closeReader=$("closeWishReader");
+  const prevWish=$("wishPrev");
+  const nextWish=$("wishNext");
 
   if(wb)wb.addEventListener("click",openWishRoom);
   if(add)add.addEventListener("click",addWish);
   if(close)close.addEventListener("click",closeWishRoom);
   if(listBtn)listBtn.addEventListener("click",openWishList);
   if(closeList)closeList.addEventListener("click",closeWishList);
+  if(readWishes)readWishes.addEventListener("click",openWishReader);
+  if(closeReader)closeReader.addEventListener("click",closeWishReader);
+  if(prevWish)prevWish.addEventListener("click",()=>stepWishReader(-1));
+  if(nextWish)nextWish.addEventListener("click",()=>stepWishReader(1));
   loadWishes();
   if(input)input.addEventListener("keydown",e=>{
     if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
@@ -1141,13 +1211,17 @@ document.addEventListener("DOMContentLoaded",()=>{
   loadWishes();
 });
 // Direct fallback for static GitHub Pages loading.
-const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle"), _wishListBtn=$("wishListBtn"), _closeWishList=$("closeWishList");
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle"), _wishListBtn=$("wishListBtn"), _closeWishList=$("closeWishList"), _readWishes=$("readWishesBtn"), _closeReader=$("closeWishReader"), _prevWish=$("wishPrev"), _nextWish=$("wishNext");
 if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
 if(_soundToggle)_soundToggle.onclick=toggleAmbient;
 if(_wishListBtn)_wishListBtn.onclick=openWishList;
 if(_closeWishList)_closeWishList.onclick=closeWishList;
+if(_readWishes)_readWishes.onclick=openWishReader;
+if(_closeReader)_closeReader.onclick=closeWishReader;
+if(_prevWish)_prevWish.onclick=()=>stepWishReader(-1);
+if(_nextWish)_nextWish.onclick=()=>stepWishReader(1);
 
 function maybeOfferRelease80(){
   const release=document.getElementById("release80");
