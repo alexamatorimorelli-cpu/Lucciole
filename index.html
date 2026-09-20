@@ -151,6 +151,7 @@ textarea{min-height:110px;resize:vertical}
 #bookIntro{font-size:13px;color:#aebbd0;margin-top:-4px}
 .memoryItem{transition:.25s}
 .memoryItem:hover{transform:translateY(-3px);box-shadow:0 10px 30px #0004}
+.memoryItem:after{content:"Tocca per aprire il ricordo ✨";display:block;margin-top:9px;font-size:11px;color:#9fb0c8;opacity:.8}.wishListOverlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:22px;background:#020611b8;backdrop-filter:blur(7px)}.wishListOverlay.hidden{display:none}.wishListCard{width:min(650px,92vw);max-height:min(76vh,720px);display:flex;flex-direction:column}.wishListItems{overflow:auto;margin:14px 0 18px;padding-right:5px;display:grid;gap:10px}.wishListItem{padding:14px 16px;border-radius:16px;background:#0d1b31;border:1px solid #ffffff12;color:#edf2fb;line-height:1.5}.wishListItem .wishNum{display:block;color:#ffd98a;font-size:12px;margin-bottom:4px}.wishListEmpty{padding:22px;text-align:center;color:#aebbd0}.wishListClose{flex:0 0 auto}.wishListBtn{margin-top:10px} 
 .finalStars{
   position:absolute;inset:0;pointer-events:none;overflow:hidden;
 }
@@ -490,13 +491,23 @@ textarea{min-height:110px;resize:vertical}
     <div class="eyebrow">🌠 La stanza dei desideri</div>
     <h2>Prendi una stella cadente</h2>
     <p>Ogni desiderio diventa una stella. Quando la prendi, scopri l'augurio che custodisce.</p>
-    <div class="wishCount">✨ <span id="wishCount">0</span> desideri nel cielo</div><button id="soundToggle" class="secondary" style="margin-top:10px">🔊 Suono rilassante: ON</button>
+    <div class="wishCount">✨ <span id="wishCount">0</span> desideri nel cielo</div><button id="wishListBtn" class="secondary wishListBtn">📜 Elenco dei desideri</button><button id="soundToggle" class="secondary" style="margin-top:10px">🔊 Suono rilassante: ON</button>
   </div>
   <div id="wishStars"></div>
   <div class="wishComposer">
     <textarea id="wishRoomText" maxlength="700" placeholder="Scrivi un desiderio o un augurio per Nonna Teresa..."></textarea>
     <button id="addWishStar">Affidalo a una stella 🌠</button>
     <button id="closeWishRoom" class="secondary">Torna al cielo</button>
+  </div>
+</div>
+
+<div id="wishListOverlay" class="wishListOverlay hidden" aria-hidden="true">
+  <div class="card wishListCard">
+    <div class="eyebrow">📜 Elenco dei desideri</div>
+    <h2>Tutti gli auguri per Nonna Teresa</h2>
+    <p>Qui puoi leggerli con calma, uno dopo l'altro.</p>
+    <div id="wishListItems" class="wishListItems"></div>
+    <button id="closeWishList" class="secondary wishListClose">Torna alle stelle 🌠</button>
   </div>
 </div>
 
@@ -885,6 +896,35 @@ function showWishReveal(wish,star){
 
 let wishShower=null;
 
+function renderWishList(){
+  const box=$("wishListItems");
+  if(!box)return;
+  box.innerHTML="";
+  if(!wishes.length){
+    box.innerHTML='<div class="wishListEmpty">Non c\'è ancora nessun desiderio nel cielo. ✨</div>';
+    return;
+  }
+  wishes.forEach((w,i)=>{
+    const item=document.createElement("div");
+    item.className="wishListItem";
+    item.innerHTML=`<span class="wishNum">Stella ${i+1} di ${wishes.length}</span><div>${escapeHtml(w.text||w)}</div>`;
+    box.appendChild(item);
+  });
+}
+function openWishList(){
+  const layer=$("wishListOverlay");
+  if(!layer)return;
+  renderWishList();
+  layer.classList.remove("hidden");
+  layer.setAttribute("aria-hidden","false");
+}
+function closeWishList(){
+  const layer=$("wishListOverlay");
+  if(!layer)return;
+  layer.classList.add("hidden");
+  layer.setAttribute("aria-hidden","true");
+}
+
 async function openWishRoom(){
  const room=$("wishRoom");
  if(!room){toast("La stanza dei desideri non è disponibile.");return;}
@@ -1063,10 +1103,14 @@ document.addEventListener("DOMContentLoaded",()=>{
   const add=$("addWishStar");
   const close=$("closeWishRoom");
   const input=$("wishRoomText");
+  const listBtn=$("wishListBtn");
+  const closeList=$("closeWishList");
 
   if(wb)wb.addEventListener("click",openWishRoom);
   if(add)add.addEventListener("click",addWish);
   if(close)close.addEventListener("click",closeWishRoom);
+  if(listBtn)listBtn.addEventListener("click",openWishList);
+  if(closeList)closeList.addEventListener("click",closeWishList);
   loadWishes();
   if(input)input.addEventListener("keydown",e=>{
     if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
@@ -1077,11 +1121,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   loadWishes();
 });
 // Direct fallback for static GitHub Pages loading.
-const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle");
+const _wishBtn=$("wishBtn"), _addWish=$("addWishStar"), _closeWish=$("closeWishRoom"), _soundToggle=$("soundToggle"), _wishListBtn=$("wishListBtn"), _closeWishList=$("closeWishList");
 if(_wishBtn)_wishBtn.onclick=openWishRoom;
 if(_addWish)_addWish.onclick=addWish;
 if(_closeWish)_closeWish.onclick=closeWishRoom;
 if(_soundToggle)_soundToggle.onclick=toggleAmbient;
+if(_wishListBtn)_wishListBtn.onclick=openWishList;
+if(_closeWishList)_closeWishList.onclick=closeWishList;
 
 function maybeOfferRelease80(){
   const release=document.getElementById("release80");
