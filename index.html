@@ -704,6 +704,15 @@ if(!SHARED_ENABLED){localFallbackLoad();const s=document.getElementById("sharedS
 function rand(a,b){return Math.random()*(b-a)+a}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2400)}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function distinctQuoteHtml(m){
+ const quote=String(m?.quote||"").trim();
+ const text=String(m?.text||"").trim();
+ if(!quote)return "";
+ const clean=value=>value.replace(/^[“”"'‘’]+|[“”"'‘’]+$/g,"").trim();
+ const q=clean(quote),t=clean(text);
+ const duplicate=q===t || (q.endsWith("…") && t.startsWith(q.slice(0,-1)));
+ return duplicate?"":`<p class="quote">${escapeHtml(quote)}</p>`;
+}
 function pointOutsideJar(){
  const r=jar.getBoundingClientRect(),m=55;
  for(let i=0;i<120;i++){const x=rand(2,98),y=rand(11,87),px=innerWidth*x/100,py=innerHeight*y/100;if(px<r.left-m||px>r.right+m||py<r.top-m||py>r.bottom+m)return{x,y}}
@@ -875,7 +884,7 @@ function showRandomMemory(){
   if(!list.length){toast("Il libro è ancora vuoto. Prima raccogli una lucciola ✨");return}
   const i=list[Math.floor(Math.random()*list.length)],m=memories[i];
   const photo=m.image?`<img class="randomPhoto" src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
-  $("randomMemoryContent").innerHTML=photo+`<div class="eyebrow">Una luce scelta a caso</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+  $("randomMemoryContent").innerHTML=photo+`<div class="eyebrow">Una luce scelta a caso</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text||"")}</p>${distinctQuoteHtml(m)}${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
   $("randomMemory").classList.remove("hidden");
 }
 function secretMessage(text){
@@ -1159,7 +1168,7 @@ function showFinal(){
 function showMemory(i){
  const m=memories[i];if(!m)return;currentMemoryIndex=i;
  const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
- $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text)}</p><p class="quote">${escapeHtml(m.quote||"")}</p>${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+ $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text||"")}</p>${distinctQuoteHtml(m)}${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
  $("memory").classList.remove("hidden")
 }
 async function deleteCurrentMemory(){
@@ -1184,7 +1193,7 @@ function renderMemoryReader(){
  if(memoryReaderIndex>=list.length)memoryReaderIndex=0;
  const i=list[memoryReaderIndex],m=memories[i];
  const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
- box.innerHTML=photo+`<div class="eyebrow">✨ Un ricordo per Nonna Teresa</div><h2>${escapeHtml(m.title||'Un ricordo per Nonna Teresa')}</h2><p>${escapeHtml(m.text||'')}</p>${m.quote?`<p class="quote">${escapeHtml(m.quote)}</p>`:''}${m.author?`<p class="readerAuthor">— ${escapeHtml(m.author)}</p>`:''}`;
+ box.innerHTML=photo+`<div class="eyebrow">✨ Un ricordo per Nonna Teresa</div><h2>${escapeHtml(m.title||'Un ricordo per Nonna Teresa')}</h2><p>${escapeHtml(m.text||'')}</p>${distinctQuoteHtml(m)}${m.author?`<p class="readerAuthor">— ${escapeHtml(m.author)}</p>`:''}`;
  counter.textContent=(memoryReaderIndex+1)+' / '+list.length;
 }
 function openMemoryReader(){
