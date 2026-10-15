@@ -983,7 +983,17 @@ function createWishStar(wish){
   star.addEventListener("click",take);
 
   stars.appendChild(star);
-  setTimeout(()=>{if(star.isConnected)star.remove()},duration+100);
+  setTimeout(()=>{
+    // Se la stella non è stata raccolta, rimuovila e falla ricomparire
+    // finché la stanza dei desideri è aperta: così il cielo non resta vuoto.
+    if(star.isConnected){
+      star.remove();
+      const room=$("wishRoom");
+      if(room && !room.classList.contains("hidden")){
+        setTimeout(()=>createWishStar(wish),rand(350,1200));
+      }
+    }
+  },duration+100);
 }
 
 function showWishReveal(wish,star){
