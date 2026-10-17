@@ -492,6 +492,44 @@ body.night-70 #world .stars{opacity:.74}
 }
 </style>
 
+
+<style id="nonna-simple-controls">
+/* Interfaccia semplificata per Nonna Teresa: solo archivio e desideri. */
+#giftBtn, #randomBtn, #musicBtn, #aboutBtn { display:none !important; }
+#archiveBtn, #wishBtn {
+  position:fixed !important;
+  z-index:60 !important;
+  bottom:14px !important;
+  top:auto !important;
+  width:min(42vw, 320px) !important;
+  max-width:none !important;
+  min-height:58px !important;
+  padding:12px 16px !important;
+  border-radius:999px !important;
+  font-size:clamp(14px, 1.6vw, 18px) !important;
+  line-height:1.2 !important;
+  white-space:normal !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  box-sizing:border-box !important;
+}
+#archiveBtn { left:calc(50% - min(42vw, 320px) - 8px) !important; right:auto !important; }
+#wishBtn { left:calc(50% + 8px) !important; right:auto !important; }
+@media (max-width:600px) {
+  #archiveBtn, #wishBtn {
+    width:47vw !important;
+    min-height:58px !important;
+    bottom:12px !important;
+    padding:10px 8px !important;
+    font-size:14px !important;
+  }
+  #archiveBtn { left:2vw !important; }
+  #wishBtn { left:51vw !important; }
+}
+</style>
+
 </head>
 <body><div id="sharedStatus">Modalità locale: inserisci le credenziali Supabase per condividere il barattolo.</div><div id="controlsShade"></div><div id="fireflyCounter">✨ <strong id="fireflyCount">0</strong> / 80 lucciole</div>
 <div id="world"><div class="stars"></div><div id="skyGlow"></div><div class="moon"></div><div id="secretMoon" title="✨"></div><div class="butterfly" style="left:14%;top:58%">🦋</div><div class="butterfly" style="left:82%;top:64%">🦋</div><div class="hill"></div><div class="hill2"></div><div class="grass"></div></div>
@@ -527,7 +565,7 @@ body.night-70 #world .stars{opacity:.74}
 <div class="actionRow"><button id="adoptSave" type="button" onclick="window.adoptFireflyMemory()">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
 </div></div>
 
-<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button><button id="deleteMemory" class="secondary">🗑️ Cancella questo ricordo</button></div></div></div>
+<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button></div></div></div>
 <div id="wishReader" class="hidden" aria-hidden="true">
   <div class="card">
     <div class="eyebrow">💌 I desideri per Nonna Teresa</div>
@@ -1171,18 +1209,6 @@ function showMemory(i){
  $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text||"")}</p>${distinctQuoteHtml(m)}${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
  $("memory").classList.remove("hidden")
 }
-async function deleteCurrentMemory(){
- const i=currentMemoryIndex,m=memories[i];
- if(i===null||!m)return;
- if(!confirm("Vuoi davvero cancellare questo ricordo e la sua lucciola?"))return;
- if(!requireShared())return;
- const {error}=await supabaseClient.from("memories").delete().eq("id",m.id);
- if(error){console.error(error);toast("Non sono riuscito a cancellare il ricordo.");return;}
- $("memory").classList.add("hidden");currentMemoryIndex=null;
- await loadSharedMemories();toast("🗑️ Ricordo cancellato per tutti.");
-}
-
-
 let memoryReaderIndex=0;
 function renderMemoryReader(){
  const box=$('memoryReaderContent'),counter=$('memoryReaderCounter');
@@ -1247,7 +1273,6 @@ $("adoptSkip").onclick=async()=>{
 };
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
 $("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
-$("deleteMemory").onclick=deleteCurrentMemory;
 $("archiveBtn").onclick=()=>{renderArchive(); $("fireflyCount").textContent=collected;$("archive").classList.remove("hidden")};
 $("closeArchive").onclick=()=>$("archive").classList.add("hidden");
 $("giftBtn").onclick=()=>$("gift").classList.remove("hidden");
