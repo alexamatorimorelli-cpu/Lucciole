@@ -449,6 +449,8 @@ body.night-50 #world .stars{opacity:.66}
 body.night-70 #world{background:radial-gradient(ellipse at 50% 58%,#3b5d79 0,#1b3450 34%,#09182b 68%,#01040b 100%)}
 body.night-70 #world .stars{opacity:.74}
 #secretMoon:hover,.butterfly:hover{opacity:.9;transform:scale(1.12)}
+.archiveActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:12px 0}
+.archiveActions button{margin:0;min-height:48px;padding:12px 18px}
 </style>
 
 <style>
@@ -518,15 +520,18 @@ body.night-70 #world .stars{opacity:.74}
 #archiveBtn { left:calc(50% - min(42vw, 320px) - 8px) !important; right:auto !important; }
 #wishBtn { left:calc(50% + 8px) !important; right:auto !important; }
 @media (max-width:600px) {
+  /* Su telefono i due pulsanti sono impilati, larghi e ben separati. */
   #archiveBtn, #wishBtn {
-    width:47vw !important;
+    left:20px !important;
+    right:auto !important;
+    width:calc(100vw - 40px) !important;
+    max-width:none !important;
     min-height:58px !important;
-    bottom:12px !important;
-    padding:10px 8px !important;
-    font-size:14px !important;
+    padding:11px 14px !important;
+    font-size:16px !important;
   }
-  #archiveBtn { left:2vw !important; }
-  #wishBtn { left:51vw !important; }
+  #archiveBtn { bottom:12px !important; }
+  #wishBtn { bottom:78px !important; }
 }
 </style>
 
@@ -582,7 +587,8 @@ body.night-70 #world .stars{opacity:.74}
 <div id="archive" class="overlay hidden"><div class="card">
 <div class="eyebrow">Il libro dei ricordi</div><h2>Tutti i ricordi raccolti</h2>
 <p id="bookIntro">Ottant'anni, tanti momenti, una vita piena di storie.</p>
-<div id="grid" class="grid"></div><button id="readMemoriesBtn" class="secondary" style="margin-top:10px">💌 Leggi uno alla volta</button><button id="closeArchive" class="secondary">Torna al cielo 🌙</button>
+<div class="archiveActions" aria-label="Azioni del libro dei ricordi"><button id="readMemoriesTopBtn" class="secondary">💌 Leggi uno alla volta</button><button id="closeArchiveTop" class="secondary">Torna al cielo 🌙</button></div>
+<div id="grid" class="grid"></div><div class="archiveActions" aria-label="Azioni del libro dei ricordi"><button id="readMemoriesBtn" class="secondary">💌 Leggi uno alla volta</button><button id="closeArchive" class="secondary">Torna al cielo 🌙</button></div>
 </div></div>
 
 <div id="memoryReader" class="hidden" aria-hidden="true">
@@ -1274,6 +1280,8 @@ $("adoptSkip").onclick=async()=>{
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
 $("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
 $("archiveBtn").onclick=()=>{renderArchive(); $("fireflyCount").textContent=collected;$("archive").classList.remove("hidden")};
+$("closeArchiveTop").onclick=()=>$("archive").classList.add("hidden");
+$("readMemoriesTopBtn").onclick=openMemoryReader;
 $("closeArchive").onclick=()=>$("archive").classList.add("hidden");
 $("giftBtn").onclick=()=>$("gift").classList.remove("hidden");
 $("closeGift").onclick=()=>$("gift").classList.add("hidden");
