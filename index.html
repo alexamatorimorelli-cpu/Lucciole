@@ -365,6 +365,7 @@ textarea{min-height:110px;resize:vertical}
 #memoryReader{position:fixed;inset:0;z-index:235;display:grid;place-items:center;background:#020716c7;backdrop-filter:blur(8px);padding:22px;box-sizing:border-box}
 #memoryReader.hidden{display:none}
 #memoryReader .card{width:min(680px,92vw);max-height:88vh;overflow:auto}
+.memoryModalNav{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 12px}.memoryModalNav button{min-width:0;flex:1;padding:11px 8px;font-size:14px}.memoryModalNav span{white-space:nowrap;color:#b7c5d9;font-size:13px}.memoryModalNav button:disabled{opacity:.45}
 #memoryReaderContent img{display:block;width:100%;max-height:390px;object-fit:cover;border-radius:18px;margin:0 auto 18px;box-shadow:0 12px 35px #0007}
 #memoryReaderContent h2{margin:8px 0 10px}
 #memoryReaderContent p{font-size:17px;line-height:1.6}
@@ -577,7 +578,7 @@ body.night-70 #world .stars{opacity:.74}
 <div class="actionRow"><button id="adoptSave" type="button" onclick="window.adoptFireflyMemory()">Adotta la lucciola ✨</button><button id="adoptSkip" class="secondary">Solo una luce, per ora</button></div>
 </div></div>
 
-<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button></div></div></div>
+<div id="memory" class="overlay hidden"><div class="card"><div id="memoryContent"></div><div class="memoryModalNav" aria-label="Naviga tra i ricordi"><button id="memoryModalPrev" class="secondary" type="button">← Precedente</button><span id="memoryModalCounter">1 / 1</span><button id="memoryModalNext" class="secondary" type="button">Successivo →</button></div><div class="actionRow"><button id="closeMemory">Lascia la lucciola nel barattolo ✨</button></div></div></div>
 <div id="wishReader" class="hidden" aria-hidden="true">
   <div class="card">
     <div class="eyebrow">💌 I desideri per Nonna Teresa</div>
@@ -1220,7 +1221,18 @@ function showMemory(i){
  const m=memories[i];if(!m)return;currentMemoryIndex=i;
  const photo=m.image?`<img src="${m.image}" alt="Foto del ricordo">`:`<div class="photoPlaceholder">✨</div>`;
  $("memoryContent").innerHTML=photo+`<div class="eyebrow">Una lucciola custodisce</div><h2>${escapeHtml(m.title||"Un ricordo per Nonna Teresa")}</h2><p>${escapeHtml(m.text||"")}</p>${distinctQuoteHtml(m)}${m.author?`<p class="small">— ${escapeHtml(m.author)}</p>`:""}`;
+ const list=getAdoptedIndexes(),pos=list.indexOf(i),counter=$("memoryModalCounter");
+ if(counter)counter.textContent=list.length&&pos>=0?`${pos+1} / ${list.length}`:'0 / 0';
+ const prev=$("memoryModalPrev"),next=$("memoryModalNext");
+ if(prev)prev.disabled=list.length<2;
+ if(next)next.disabled=list.length<2;
  $("memory").classList.remove("hidden")
+}
+function stepOpenedMemory(delta){
+ const list=getAdoptedIndexes();if(!list.length)return;
+ let pos=list.indexOf(currentMemoryIndex);if(pos<0)pos=0;
+ pos=(pos+delta+list.length)%list.length;
+ showMemory(list[pos]);
 }
 let memoryReaderIndex=0;
 function renderMemoryReader(){
@@ -1286,6 +1298,8 @@ $("adoptSkip").onclick=async()=>{
 };
 $("memoryPhoto").addEventListener("change",e=>{const f=e.target.files[0];if(!f){$("photoPreview").style.display="none";return}const r=new FileReader();r.onload=()=>{$("photoPreview").src=r.result;$("photoPreview").style.display="block"};r.readAsDataURL(f)});
 $("closeMemory").onclick=()=>{$("memory").classList.add("hidden");currentMemoryIndex=null};
+$("memoryModalPrev").onclick=()=>stepOpenedMemory(-1);
+$("memoryModalNext").onclick=()=>stepOpenedMemory(1);
 $("archiveBtn").onclick=()=>{renderArchive(); $("fireflyCount").textContent=collected;$("archive").classList.remove("hidden")};
 $("closeArchiveTop").onclick=()=>$("archive").classList.add("hidden");
 $("readMemoriesTopBtn").onclick=openMemoryReader;
